@@ -80,8 +80,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               {currentDayPlan.theme}
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              核心方针：<span className="text-amber-300 font-medium">保大放小，彻底放弃冗长录播课</span>。
-              以讲义例题为骨架推进数二，按 计组→OS→计网 攻坚408，严控英语政治耗时，死守 10.23 数二真题与 11.11 全真套卷！
+              核心方针：<span className="text-amber-300 font-medium">保大放小，动态顺延，彻底放弃冗长录播课</span>。
+              以讲义例题为骨架推进数二（时间严格不动），408因大学课程顺延2天至10.11接战主存、10.22计组结课、10.23OS启动，死守 10.23 数二真题与 11.11 全真套卷！
             </p>
           </div>
 
@@ -138,7 +138,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <span className="text-xs text-slate-400">天后开启2010-2024套卷</span>
           </div>
           <p className="text-[11px] text-slate-500 mt-2 truncate">
-            计组(10.20) → OS(10.31) → 计网(11.10)
+            计组(10.22) → OS(11.02) → 计网(11.11)
           </p>
         </div>
 

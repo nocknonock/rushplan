@@ -68,7 +68,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            精确落实到天的特种兵打法：数二15天极限压缩 (10.8-10.22) + 计组13天决战 (10.8-10.20)
+            精确落实到天的特种兵打法：数二15天极限压缩 (10.8-10.22) + 计组顺延决战 (10.8-10.22，10.11接战主存)
           </p>
         </div>
 

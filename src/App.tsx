@@ -14,35 +14,54 @@ import { DailyWorkstation } from './components/DailyWorkstation';
 import { MindsetEmergencyBunker } from './components/MindsetEmergencyBunker';
 import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 'lucide-react';
 
-const STORAGE_KEY = 'kaoyan_battle_station_plans_v1';
+const STORAGE_KEY = 'kaoyan_battle_station_plans_v2';
+const LEGACY_STORAGE_KEY = 'kaoyan_battle_station_plans_v1';
 const EXAM_TARGET_DATE = new Date('2026-12-26T08:30:00');
 const MATH_PAPERS_DATE = new Date('2026-10-23T08:30:00');
 const CS_PAPERS_DATE = new Date('2026-11-11T14:00:00');
 const XIAO8_DATE = new Date('2026-11-10T00:00:00');
 
-// Smart merge function: preserves user checkmarks and notes, but loads updated code content
+// Smart merge function: preserves user checkmarks and notes by Task ID or date, but loads updated schedule content
 function mergeSavedWithInitial(savedList: DayPlan[], initialList: DayPlan[]): DayPlan[] {
-  const savedMap = new Map<string, DayPlan>();
-  savedList.forEach((plan) => savedMap.set(plan.date, plan));
+  const savedByDate = new Map<string, DayPlan>();
+  const savedMathById = new Map<string, { isCompleted: boolean; notes?: string }>();
+  const savedCsById = new Map<string, { isCompleted: boolean; notes?: string }>();
+
+  savedList.forEach((plan) => {
+    savedByDate.set(plan.date, plan);
+    if (plan.math2Task) {
+      savedMathById.set(plan.math2Task.id, {
+        isCompleted: plan.math2Task.isCompleted,
+        notes: plan.math2Task.notes,
+      });
+    }
+    if (plan.csTask) {
+      savedCsById.set(plan.csTask.id, {
+        isCompleted: plan.csTask.isCompleted,
+        notes: plan.csTask.notes,
+      });
+    }
+  });
 
   return initialList.map((initPlan) => {
-    const savedPlan = savedMap.get(initPlan.date);
-    if (!savedPlan) return initPlan;
+    const datePlan = savedByDate.get(initPlan.date);
+    const mathSave = initPlan.math2Task ? savedMathById.get(initPlan.math2Task.id) : undefined;
+    const csSave = initPlan.csTask ? savedCsById.get(initPlan.csTask.id) : undefined;
 
     return {
       ...initPlan,
       math2Task: initPlan.math2Task
         ? {
             ...initPlan.math2Task,
-            isCompleted: savedPlan.math2Task?.isCompleted ?? false,
-            notes: savedPlan.math2Task?.notes ?? initPlan.math2Task.notes,
+            isCompleted: mathSave ? mathSave.isCompleted : (datePlan?.math2Task?.isCompleted ?? false),
+            notes: mathSave?.notes ?? datePlan?.math2Task?.notes ?? initPlan.math2Task.notes,
           }
         : undefined,
       csTask: initPlan.csTask
         ? {
             ...initPlan.csTask,
-            isCompleted: savedPlan.csTask?.isCompleted ?? false,
-            notes: savedPlan.csTask?.notes ?? initPlan.csTask.notes,
+            isCompleted: csSave ? csSave.isCompleted : (datePlan?.csTask?.isCompleted ?? false),
+            notes: csSave?.notes ?? datePlan?.csTask?.notes ?? initPlan.csTask.notes,
           }
         : undefined,
     };
@@ -53,7 +72,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'timeline' | 'armory' | 'workstation' | 'mindset'>('dashboard');
   const [plans, setPlans] = useState<DayPlan[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
