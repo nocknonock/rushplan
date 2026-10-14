@@ -43,6 +43,13 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [expandedDate, setExpandedDate] = useState<string | null>(selectedDate);
 
+  // Sync expanded card whenever selectedDate changes (e.g. initial load or jump to today)
+  React.useEffect(() => {
+    if (selectedDate) {
+      setExpandedDate(selectedDate);
+    }
+  }, [selectedDate]);
+
   // Filter plans
   const filteredPlans = plans.filter((plan) => {
     // Subject filter

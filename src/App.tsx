@@ -13,7 +13,7 @@ import { SubjectArmory } from './components/SubjectArmory';
 import { DailyWorkstation } from './components/DailyWorkstation';
 import { MindsetEmergencyBunker } from './components/MindsetEmergencyBunker';
 import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 'lucide-react';
-import { triggerTaskCompletionFireworks, triggerDayCompleteGrandFinale } from './utils/confetti';
+import { triggerTaskCelebration, triggerDayCompletionCelebration, soundManager } from './utils/celebration';
 
 const STORAGE_KEY = 'kaoyan_battle_station_plans_v4';
 const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
@@ -31,29 +31,24 @@ export function getTodayOrEffectiveDate(plans: DayPlan[]): string {
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
   const todayStr = `${yyyy}-${mm}-${dd}`;
+  const planYearStr = `2026-${mm}-${dd}`;
 
   // 1. Direct exact match with current plan date (e.g. 2026-10-14)
   if (plans.some((p) => p.date === todayStr)) {
     return todayStr;
   }
 
-  // 2. Month-day match in 2026 if user's system clock is set to current month-day
-  const monthDayStr = `2026-${mm}-${dd}`;
-  if (plans.some((p) => p.date === monthDayStr)) {
-    return monthDayStr;
+  // 2. Month-day match in 2026 (aligns user's real calendar month and day with the 2026 exam schedule)
+  if (plans.some((p) => p.date === planYearStr)) {
+    return planYearStr;
   }
 
-  // 3. If today is earlier than the first battle plan, default to first day
-  if (plans.length > 0 && todayStr < plans[0].date) {
-    return plans[0].date;
+  // 3. Current active milestone anchor (10.14: Linear Algebra Day 1 & Architecture Ch4)
+  if (plans.some((p) => p.date === '2026-10-14')) {
+    return '2026-10-14';
   }
 
-  // 4. If today is later than the last battle plan, default to last day
-  if (plans.length > 0 && todayStr > plans[plans.length - 1].date) {
-    return plans[plans.length - 1].date;
-  }
-
-  // 5. Fallback: find the first plan that has uncompleted math or CS tasks
+  // 4. Fallback: find the first plan that has uncompleted math or CS tasks
   const uncompleted = plans.find(
     (p) => (p.math2Task && !p.math2Task.isCompleted) || (p.csTask && !p.csTask.isCompleted)
   );
@@ -150,6 +145,13 @@ export default function App() {
     return getTodayOrEffectiveDate(INITIAL_DAY_PLANS);
   });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [soundMuted, setSoundMuted] = useState<boolean>(() => soundManager.getMuted());
+
+  const handleToggleSound = () => {
+    const next = soundManager.toggleMute();
+    setSoundMuted(next);
+    showToast(next ? '🔇 已开启静音（自习室/图书馆模式）' : '🔊 战报音效已开启（打卡随机播放鼓掌、欢呼与凯旋号角）');
+  };
 
   // Sync to local storage
   useEffect(() => {
@@ -165,7 +167,7 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // Check if a day's 4 core tasks are fully conquered and trigger grand fireworks
+  // Check if a day's 4 core tasks are fully conquered and trigger grand celebration
   const checkDayCompletion = (plan: DayPlan) => {
     const mathDone = !plan.math2Task || plan.math2Task.isCompleted;
     const csDone = !plan.csTask || plan.csTask.isCompleted;
@@ -174,7 +176,7 @@ export default function App() {
 
     if (mathDone && csDone && englishDone && politicsDone) {
       setTimeout(() => {
-        triggerDayCompleteGrandFinale();
+        triggerDayCompletionCelebration();
         showToast(`🏆 战力爆发！${plan.formattedDate} 当日四科战备全部圆满收官！`);
       }, 400);
     }
@@ -187,7 +189,7 @@ export default function App() {
         if (plan.math2Task?.id === taskId) {
           const nextVal = !plan.math2Task.isCompleted;
           if (nextVal) {
-            triggerTaskCompletionFireworks();
+            triggerTaskCelebration();
             showToast(`🎉 攻克数二母题：${plan.math2Task.title.slice(0, 16)}...`);
           }
           const updated = {
@@ -212,7 +214,7 @@ export default function App() {
         if (plan.csTask?.id === taskId) {
           const nextVal = !plan.csTask.isCompleted;
           if (nextVal) {
-            triggerTaskCompletionFireworks();
+            triggerTaskCelebration();
             showToast(`🎉 攻克408重点：${plan.csTask.title.slice(0, 16)}...`);
           }
           const updated = {
@@ -237,7 +239,7 @@ export default function App() {
         if (plan.date === date) {
           const nextVal = !plan.englishTask.isCompleted;
           if (nextVal) {
-            triggerTaskCompletionFireworks();
+            triggerTaskCelebration();
             showToast(`🎉 拿下考研英语任务：${plan.englishTask.title}`);
           }
           const updated = {
@@ -262,7 +264,7 @@ export default function App() {
         if (plan.date === date) {
           const nextVal = !plan.politicsTask.isCompleted;
           if (nextVal) {
-            triggerTaskCompletionFireworks();
+            triggerTaskCelebration();
             showToast(`🎉 拿下考研政治防守反击：${plan.politicsTask.title}`);
           }
           const updated = {
@@ -379,6 +381,8 @@ export default function App() {
         onSelectTab={setActiveTab}
         daysToExam={daysToExam}
         daysToMathPastPapers={daysToMathPastPapers}
+        soundMuted={soundMuted}
+        onToggleSound={handleToggleSound}
       />
 
       {/* Main Viewport */}

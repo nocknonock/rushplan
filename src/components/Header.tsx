@@ -1,11 +1,13 @@
 import React from 'react';
-import { Calendar, Target, ShieldAlert, Sparkles, BookOpen, Clock, HeartHandshake } from 'lucide-react';
+import { Calendar, Target, Sparkles, BookOpen, Clock, HeartHandshake, Volume2, VolumeX } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'dashboard' | 'timeline' | 'armory' | 'workstation' | 'mindset';
   onSelectTab: (tab: 'dashboard' | 'timeline' | 'armory' | 'workstation' | 'mindset') => void;
   daysToExam: number;
   daysToMathPastPapers: number;
+  soundMuted: boolean;
+  onToggleSound: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -13,6 +15,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   daysToExam,
   daysToMathPastPapers,
+  soundMuted,
+  onToggleSound,
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
@@ -100,9 +104,31 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: Primary Action / Critical Deadline Metrics */}
-        <div className="hidden lg:flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs">
+        {/* Zone 3: Primary Action / Critical Deadline Metrics & Sound Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={onToggleSound}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+              soundMuted
+                ? 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
+            }`}
+            title={soundMuted ? '点击开启任务完成音效（鼓掌/欢呼/号角）' : '点击静音（适合自习室/图书馆）'}
+          >
+            {soundMuted ? (
+              <>
+                <VolumeX className="h-3.5 w-3.5 text-slate-400" />
+                <span className="hidden sm:inline">已静音</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="h-3.5 w-3.5 text-amber-400 animate-pulse" />
+                <span className="hidden sm:inline">战报音效开</span>
+              </>
+            )}
+          </button>
+
+          <div className="hidden lg:flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs">
             <span className="text-slate-400">10.23 数二真题:</span>
             <span className="font-mono font-bold tabular-nums text-amber-400">
               {daysToMathPastPapers > 0 ? `${daysToMathPastPapers}天` : '已开战'}
