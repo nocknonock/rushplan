@@ -14,8 +14,8 @@ import { DailyWorkstation } from './components/DailyWorkstation';
 import { MindsetEmergencyBunker } from './components/MindsetEmergencyBunker';
 import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 'lucide-react';
 
-const STORAGE_KEY = 'kaoyan_battle_station_plans_v3';
-const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
+const STORAGE_KEY = 'kaoyan_battle_station_plans_v4';
+const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
 const EXAM_TARGET_DATE = new Date('2026-12-26T08:30:00');
 const MATH_PAPERS_DATE = new Date('2026-10-23T08:30:00');
 const CS_PAPERS_DATE = new Date('2026-11-11T14:00:00');
