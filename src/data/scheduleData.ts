@@ -189,7 +189,7 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.11 Day 4 (【408专业课】第3章 存储系统（主存与芯片扩展）顺延至今日学习！)
+  // 10.11 Day 4
   {
     date: '2026-10-11',
     formattedDate: '10月11日',
@@ -223,7 +223,7 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       dayIndex: 4,
       subject: 'co',
       phase: '计组决战13天',
-      title: '第3章 存储系统（主存与芯片扩展）【原9号任务顺延至今日】',
+      title: '第3章 存储系统（主存与芯片扩展）',
       focusArea: 'SRAM vs DRAM + DRAM刷新 + 主存芯片字位扩展与译码器连接',
       coreConcepts: [
         'SRAM（双稳态触发器，Cache使用，快，成本高） vs DRAM（电容栅极电荷，主存使用，需定期刷新）',
@@ -286,7 +286,7 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       dayIndex: 5,
       subject: 'co',
       phase: '计组决战13天',
-      title: '第3章 Cache 核心映射与容量计算（极高频大题！）【顺延攻坚】',
+      title: '第3章 Cache 核心映射与容量计算（极高频大题！）',
       focusArea: '全相联/直接/组相联映射 + 主存地址 Tag/Index/Offset 拆解 + Cache总容量',
       coreConcepts: [
         '地址拆分：块内偏移 Offset = log2(块大小B)；Cache组号 Index = log2(组数)；Tag = 主存地址位数 - Index - Offset',
@@ -349,7 +349,7 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       dayIndex: 6,
       subject: 'co',
       phase: '计组决战13天',
-      title: '第3章 Cache 替换策略、写策略与平均访存时间【顺延攻坚】',
+      title: '第3章 Cache 替换策略、写策略与平均访存时间',
       focusArea: '全写法 vs 写回法 + 写分配 vs 非写分配 + LRU替换过程追踪',
       coreConcepts: [
         '写命中策略：全写法(Write Through，同时写Cache和主存) vs 写回法(Write Back，只写Cache设脏位，淘汰时写回主存)',
@@ -377,12 +377,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.14 Day 7
+  // 10.14 Day 7 (第3章大题全歼大捷！抢跑第4章指令系统)
   {
     date: '2026-10-14',
     formattedDate: '10月14日',
     weekday: '周三',
-    theme: '数二矩阵秩与向量组相关性 · 计组虚拟存储器与TLB',
+    theme: '数二矩阵秩与向量组相关性 · 计组第3章大捷收工（抢先开启第4章指令系统！）',
     math2Task: {
       id: 'math2-1014',
       date: '2026-10-14',
@@ -406,25 +406,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1012',
+      id: 'co-1014-ch4-start',
       date: '2026-10-14',
       dayIndex: 7,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第3章 虚拟存储器与 TLB 快表机制【顺延攻坚】',
-      focusArea: '页式虚存 + TLB快表作用 + TLB/Page/Cache 三级联动判定',
+      phase: '计组决战 · 极速破局',
+      title: '【第3章大题全歼大捷】抢跑第4章指令系统（指令格式与扩展操作码设计）',
+      focusArea: '第3章真题大题扫尾复盘 + 开启定长/变长指令与扩展操作码前缀编码设计',
       coreConcepts: [
-        '虚地址构成：虚拟页号(VPN) + 页内偏移量(PO)；物理地址：物理页号(PPN) + 页内偏移量(PO)',
-        'TLB(Translation Lookaside Buffer)：页表的快速缓存，硬件并行查找VPN到PPN的映射',
-        '三者联动黄金法则：TLB命中必然Page命中；TLB不命中可能Page命中；若Page缺页则TLB必然不命中！',
+        '战斗力爆发！2天啃完第3章全部选择与大题真题，直接填平此前大学课程顺延，进入进攻冲刺节奏！',
+        '扩展操作码核心规则：短操作码不能作为长操作码的前缀（前缀编码），保留部分编码状态向更长操作码扩展',
+        '指令字长与存储字长、机器字长关系：指令字长取决于操作码位数与寻址地址码位数之和',
       ],
-      mcqTarget: '刷透 TLB/Page/Cache 命中与缺失 8 种组合真伪判断选择题',
-      bigQuestionTarget: '攻克 1 道虚存页表大小与 TLB 查找计算大题',
-      recommendedProblems: ['【2012年统考真题第44题】或【2018年统考真题第44题前问】'],
+      mcqTarget: '做透三地址/二地址/一地址指令最大条数计算真题选择题 4 道',
+      bigQuestionTarget: '攻克 1 道扩展操作码分配计算经典大题（送分题，必须拿满）',
+      recommendedProblems: ['讲义扩展操作码设计例题（如设计15条二地址、31条一地址、64条零地址指令）'],
       pitfallsToAvoid: [
-        '注意虚存访问时页内偏移量直接从虚拟地址复制到物理地址，无需任何转换！',
+        '扩展操作码计算切勿漏算保留状态乘 2^k！今晚趁热打铁打通前缀编码逻辑！',
       ],
-      suggestedDurationMinutes: 210,
+      suggestedDurationMinutes: 180,
       isCompleted: false,
     },
     englishTask: {
@@ -439,12 +439,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.15 Day 8
+  // 10.15 Day 8 (第4章寻址与CISC/RISC全速通关！)
   {
     date: '2026-10-15',
     formattedDate: '10月15日',
     weekday: '周四',
-    theme: '数二线性方程组解与含参 · 计组指令格式扩展操作码',
+    theme: '数二线性方程组解与含参 · 计组指令寻址全攻坚（第4章全速大通关！）',
     math2Task: {
       id: 'math2-1015',
       date: '2026-10-15',
@@ -469,24 +469,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1013',
+      id: 'co-1015-ch4-addressing',
       date: '2026-10-15',
       dayIndex: 8,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第4章 指令系统（指令格式与扩展操作码设计）【顺延攻坚】',
-      focusArea: '定长/变长指令 + 扩展操作码前缀编码设计原则',
+      phase: '计组决战 · 极速破局',
+      title: '第4章 指令寻址方式全攻坚 + CISC/RISC对比（第4章全速大通关！）',
+      focusArea: '常见寻址方式有效地址EA计算 + 相对/基址/变址寻址对比 + CISC vs RISC',
       coreConcepts: [
-        '扩展操作码核心规则：短操作码不能作为长操作码的前缀（前缀编码），保留部分编码状态向更长操作码扩展',
-        '指令字长与存储字长、机器字长的关系：指令字长取决于操作码位数与寻址地址码位数之和',
+        '相对寻址核心天坑：EA = (PC) + A，注意以指令当前执行为基准（执行取指后PC已自增！切勿拿原PC算偏移量！）',
+        '基址寻址 EA = (BR) + A 面向OS程序重定位；变址寻址 EA = (IX) + A 面向用户数组遍历',
+        'CISC（复杂指令集，指令长短不一，微程序多） vs RISC（精简指令集，指令定长，单周期，硬布线为主，寄存器多）',
       ],
-      mcqTarget: '做透三地址/二地址/一地址指令最大条数计算真题选择题',
-      bigQuestionTarget: '攻克 1 道扩展操作码分配计算大题（送分题，必须拿满）',
-      recommendedProblems: ['讲义经典扩展操作码设计例题（如设计15条二地址、31条一地址、64条零地址指令）'],
+      mcqTarget: '刷透各类寻址方式访存次数比较与 CISC/RISC 特性选择题 5 道',
+      bigQuestionTarget: '攻克 1 道根据操作码与寻址字段翻译地址的大题（【2012年统考真题第43题】）',
+      recommendedProblems: ['【2012年统考真题第43题】'],
       pitfallsToAvoid: [
-        '计算可扩展状态数时，减去已占用的指令条数后乘以 2^k 进行扩展',
+        '今日彻底封存第4章，绝不多留一天，明天全军挥师会师第5章CPU！',
       ],
-      suggestedDurationMinutes: 210,
+      suggestedDurationMinutes: 200,
       isCompleted: false,
     },
     englishTask: {
@@ -501,12 +502,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.16 Day 9
+  // 10.16 Day 9 (提前挺进第5章CPU！)
   {
     date: '2026-10-16',
     formattedDate: '10月16日',
     weekday: '周五',
-    theme: '数二特征值特征向量性质 · 计组指令寻址与CISC/RISC',
+    theme: '数二特征值特征向量性质 · 计组CPU结构与微操作周期（提前挺进第5章CPU！）',
     math2Task: {
       id: 'math2-1016',
       date: '2026-10-16',
@@ -530,22 +531,22 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1014',
+      id: 'co-1016-cpu-structure',
       date: '2026-10-16',
       dayIndex: 9,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第4章 指令寻址方式与 CISC / RISC 架构【顺延攻坚】',
-      focusArea: '常见寻址方式有效地址EA计算 + 相对/基址/变址寻址对比 + CISC vs RISC',
+      phase: '计组决战 · 王牌章节',
+      title: '第5章 CPU结构与指令执行微操作周期【提前攻入王牌章节】',
+      focusArea: '运算器与控制器组成部件 + 通用/专用寄存器 + 指令周期数据流',
       coreConcepts: [
-        '相对寻址：EA = (PC) + A，注意以指令当前执行为基准（执行取指后PC已自增！）；基址寻址：EA = (BR) + A 面向OS；变址寻址：EA = (IX) + A 面向用户',
-        'CISC（复杂指令集，指令长短不一，微程序多，研制周期长） vs RISC（精简指令集，指令定长，单周期，寄存器多，硬布线为主）',
+        '专用寄存器（对汇编程序员透明不可见）：PC, IR, MAR, MDR；可见寄存器：通用寄存器, PSW, 基址/变址寄存器',
+        '取指周期微操作：(PC) -> MAR -> 读主存 -> MDR -> IR；同时 (PC)+1 -> PC',
       ],
-      mcqTarget: '刷透各类寻址方式访存次数比较选择题 4 道',
-      bigQuestionTarget: '攻克 1 道根据操作码与寻址字段翻译地址的大题',
-      recommendedProblems: ['【2012年统考真题第43题】'],
+      mcqTarget: '做透寄存器可见性判定与指令周期各阶段总线传输真题选择题 4 道',
+      bigQuestionTarget: '理清加法指令在取指、间址、执行周期的所有微操作流程',
+      recommendedProblems: ['讲义经典微操作信号分解例题'],
       pitfallsToAvoid: [
-        '相对寻址计算偏移量时，切记 PC 在取指后已经加了指令字长！千万别忘了当前 PC 的自增值！',
+        '分清 MAR 和 MDR：MAR连接地址总线，MDR连接数据总线，二者均在CPU内部',
       ],
       suggestedDurationMinutes: 210,
       isCompleted: false,
@@ -562,12 +563,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.17 Day 10
+  // 10.17 Day 10 (提前攻坚数据通路13分大杀器！)
   {
     date: '2026-10-17',
     formattedDate: '10月17日',
     weekday: '周六',
-    theme: '数二相似理论与对角化 · 计组CPU结构与微操作',
+    theme: '数二相似理论与对角化 · 计组数据通路与控制信号（提前攻坚最强痛点！）',
     math2Task: {
       id: 'math2-1017',
       date: '2026-10-17',
@@ -591,25 +592,24 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1015',
+      id: 'co-1017-datapath',
       date: '2026-10-17',
       dayIndex: 10,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第5章 CPU结构与指令执行微操作周期【顺延攻坚】',
-      focusArea: '运算器与控制器组成部件 + 通用/专用寄存器 + 指令周期数据流',
+      phase: '计组决战 · 王牌章节',
+      title: '第5章 【核心大题攻坚】数据通路与控制信号分析（408年年必考13分大杀器！）',
+      focusArea: '单周期数据通路 + 内部总线读图 + MUX多路选择器与控制信号判定',
       coreConcepts: [
-        '专用寄存器（对汇编程序员透明不可见）：PC(程序计数器), IR(指令寄存器), MAR(存储器地址寄存器), MDR(存储器数据寄存器)',
-        '对程序员可见的寄存器：通用寄存器(AX,BX), PSW(程序状态字), 基址/变址寄存器',
-        '取指周期微操作：(PC) -> MAR -> 读主存 -> MDR -> IR；同时 (PC)+1 -> PC',
+        '读图黄金工作流：从指令寄存器 IR 译码出发 -> 看操作数来源（寄存器还是立即数） -> 找经过哪个 MUX -> ALU执行什么运算 -> 结果写回哪里',
+        '控制信号：如 RegWrite(写寄存器), ALUSrc(操作数选择), MemRead(读主存), MemWrite(写主存), MemtoReg(写回数据源)',
       ],
-      mcqTarget: '做透寄存器可见性判定与指令周期各阶段总线传输真题选择题',
-      bigQuestionTarget: '理清加法指令在取指、间址、执行周期的所有微操作流程',
-      recommendedProblems: ['讲义经典微操作信号分解例题'],
+      mcqTarget: '刷透数据通路部件连接真题选择题 3 道',
+      bigQuestionTarget: '攻克 1 道历年统考真题数据通路大题（写出每条指令所需微操作控制信号）',
+      recommendedProblems: ['【2015年统考真题第43题】或【2017年统考真题第43题】（必须看懂）'],
       pitfallsToAvoid: [
-        '分清 MAR 和 MDR：MAR连接地址总线，MDR连接数据总线，二者均在CPU内部',
+        '若看数据通路图发懵，不要硬看书，直接看王道数据通路专项强化课 40 分钟快速打通思路！',
       ],
-      suggestedDurationMinutes: 210,
+      suggestedDurationMinutes: 220,
       isCompleted: false,
     },
     englishTask: {
@@ -624,12 +624,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.18 Day 11
+  // 10.18 Day 11 (控制器设计)
   {
     date: '2026-10-18',
     formattedDate: '10月18日',
     weekday: '周日',
-    theme: '数二实对称对角化施密特正交 · 计组数据通路大题攻坚',
+    theme: '数二实对称对角化施密特正交 · 计组控制器设计（硬布线vs微程序）',
     math2Task: {
       id: 'math2-1018',
       date: '2026-10-18',
@@ -653,24 +653,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1016',
+      id: 'co-1018-controller',
       date: '2026-10-18',
       dayIndex: 11,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第5章 【核心大题攻坚】数据通路与控制信号分析（408重难点！）【顺延攻坚】',
-      focusArea: '单周期数据通路 + 内部总线读图 + MUX多路选择器与控制信号判定',
+      phase: '计组决战 · 王牌章节',
+      title: '第5章 控制器设计（硬布线组合逻辑 vs 微程序控制器）',
+      focusArea: '微指令/微操作/微程序概念 + 水平型 vs 垂直型微指令 + 微地址断定方式',
       coreConcepts: [
-        '读图黄金工作流：从指令寄存器 IR 译码出发 -> 看操作数来源（寄存器还是立即数） -> 找经过哪个 MUX -> ALU执行什么运算 -> 结果写回哪里',
-        '控制信号：如 RegWrite(写寄存器), ALUSrc(操作数选择), MemRead(读主存), MemWrite(写主存), MemtoReg(写回数据源)',
+        '微程序核心关系：一条机器指令对应一个微程序；一个微程序由若干条微指令组成；一条微指令包含多个微操作控制信号',
+        '水平型微指令（并行能力强，微指令字长长，微程序短，执行快） vs 垂直型微指令（类似机器指令，字长短，执行慢）',
+        '断定方式（下地址字段）：微指令由“操作控制字段 + 下地址字段(断定字段)”组成',
       ],
-      mcqTarget: '刷透数据通路部件连接真题选择题 3 道',
-      bigQuestionTarget: '攻克 1 道历年统考真题数据通路大题（写出每条指令所需微操作控制信号）',
-      recommendedProblems: ['【2015年统考真题第43题】或【2017年统考真题第43题】（必须看懂）'],
+      mcqTarget: '做透水平型编码字段位数计算（直接控制法 vs 字段直接编码法）真题选择题',
+      bigQuestionTarget: '攻克 1 道微指令字长与控制字段编码计算大题',
+      recommendedProblems: ['讲义微指令格式设计与字段编译例题'],
       pitfallsToAvoid: [
-        '若看数据通路图发懵，不要硬看书，直接看王道数据通路专项强化课 40 分钟快速打通思路！',
+        '注意互斥性微命令采用字段直接编码时，每段必须留出一个全0状态表示“不发任何命令”！',
       ],
-      suggestedDurationMinutes: 210,
+      suggestedDurationMinutes: 200,
       isCompleted: false,
     },
     englishTask: {
@@ -685,12 +686,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.19 Day 12
+  // 10.19 Day 12 (流水线大题攻坚)
   {
     date: '2026-10-19',
     formattedDate: '10月19日',
     weekday: '周一',
-    theme: '数二二次型化标准形 · 计组控制器设计（硬布线vs微程序）',
+    theme: '数二二次型化标准形 · 计组流水线冒险与性能分析',
     math2Task: {
       id: 'math2-1019',
       date: '2026-10-19',
@@ -714,23 +715,22 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1017',
+      id: 'co-1019-pipeline',
       date: '2026-10-19',
       dayIndex: 12,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第5章 控制器设计（硬布线组合逻辑 vs 微程序控制器）【顺延攻坚】',
-      focusArea: '微指令/微操作/微程序概念 + 水平型 vs 垂直型微指令 + 微地址断定方式',
+      phase: '计组决战 · 王牌章节',
+      title: '第5章 【核心大题攻坚】指令流水线性能与三大冒险处理（RAW旁路转发与甘特图）',
+      focusArea: '吞吐率/加速比 + 结构/数据/控制冲突 + RAW写后读数据旁路技术',
       coreConcepts: [
-        '微程序核心关系：一条机器指令对应一个微程序；一个微程序由若干条微指令组成；一条微指令包含多个微操作控制信号',
-        '水平型微指令（并行能力强，微指令字长长，微程序短，执行快） vs 垂直型微指令（类似机器指令，字长短，执行慢）',
-        '断定方式（下地址字段）：微指令由“操作控制字段 + 下地址字段(断定字段)”组成',
+        '三大流水线冒险：结构冒险(多条指令同时访存 -> 增加指令/数据分离Cache)；数据冒险(写后读RAW -> 数据旁路/转发技术或插入NOP气泡)；控制冒险(分支指令 -> 分支预测)',
+        '流水线时空图：吞吐率 TP = n / 时钟周期总数；加速比 S = 单周期总耗时 / 流水线总耗时',
       ],
-      mcqTarget: '做透水平型编码字段位数计算（直接控制法 vs 字段直接编码法）真题选择题',
-      bigQuestionTarget: '攻克 1 道微指令字长与控制字段编码计算大题',
-      recommendedProblems: ['讲义微指令格式设计与字段编译例题'],
+      mcqTarget: '刷透流水线冒险类型判别选择题 4 道',
+      bigQuestionTarget: '精做 1 道流水线时空图绘制与数据冲突分析大题',
+      recommendedProblems: ['【2014年统考真题第43题】或【2021年统考真题大题】'],
       pitfallsToAvoid: [
-        '注意互斥性微命令采用字段直接编码时，每段必须留出一个全0状态表示“不发任何命令”！',
+        '判断数据冲突时，仔细看数据写回寄存器在哪个时钟周期的前半段还是后半段！',
       ],
       suggestedDurationMinutes: 210,
       isCompleted: false,
@@ -747,12 +747,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.20 Day 13
+  // 10.20 Day 13 (总线系统速通)
   {
     date: '2026-10-20',
     formattedDate: '10月20日',
     weekday: '周二',
-    theme: '数二正定判定与二次型最值 · 计组流水线冒险攻坚',
+    theme: '数二正定判定与二次型最值 · 计组总线系统全盘速通',
     math2Task: {
       id: 'math2-1020',
       date: '2026-10-20',
@@ -776,24 +776,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1018',
+      id: 'co-1020-bus',
       date: '2026-10-20',
       dayIndex: 13,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第5章 【核心大题攻坚】指令流水线性能与三大冒险处理【顺延攻坚】',
-      focusArea: '吞吐率/加速比 + 结构/数据/控制冲突 + RAW写后读数据旁路技术',
+      phase: '计组决战 · 尾声收官',
+      title: '第6章 总线系统全盘速通（总线带宽计算 + 集中式仲裁对比）',
+      focusArea: '总线带宽计算 + 集中式仲裁方式优缺点 + 同步/异步定时',
       coreConcepts: [
-        '三大流水线冒险：结构冒险(多条指令同时访存 -> 增加指令/数据分离Cache)；数据冒险(写后读RAW -> 数据旁路/转发技术或插入NOP气泡)；控制冒险(分支指令 -> 分支预测)',
-        '流水线时空图：吞吐率 TP = n / 时钟周期总数；加速比 S = 单周期总耗时 / 流水线总耗时',
+        '总线带宽公式：带宽 = 总线工作频率 × (总线宽度 / 8) [B/s]',
+        '集中式总线仲裁：链式查询(优先级固定，对电路敏感，连线少3根)；计数器定时查询(优先级灵活，设备号线数 log2 N)；独立请求方式(响应最快，连线多 2N根)',
+        '异步定时：全互锁(最可靠，速度最慢)、半互锁、不互锁',
       ],
-      mcqTarget: '刷透流水线冒险类型判别选择题 4 道',
-      bigQuestionTarget: '精做 1 道流水线时空图绘制与数据冲突分析大题',
-      recommendedProblems: ['【2014年统考真题第43题】或【2021年统考真题大题】'],
+      mcqTarget: '刷透总线带宽计算与仲裁方式对比真题选择题 5 道',
+      bigQuestionTarget: '本章无独立大题，快速完成真题选择题收割',
+      recommendedProblems: ['历年统考总线带宽计算真题'],
       pitfallsToAvoid: [
-        '判断数据冲突时，仔细看数据写回寄存器在哪个时钟周期的前半段还是后半段！',
+        '注意区分总线时钟周期与传输周期，若一个传输周期包含多个时钟周期，需按传输周期算有效带宽！',
       ],
-      suggestedDurationMinutes: 210,
+      suggestedDurationMinutes: 150,
       isCompleted: false,
     },
     englishTask: {
@@ -808,12 +809,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.21 Day 14
+  // 10.21 Day 14 (计组提前大通关！)
   {
     date: '2026-10-21',
     formattedDate: '10月21日',
     weekday: '周三',
-    theme: '数二线代终极串联 · 计组总线系统通关',
+    theme: '数二线代终极串联 · 计组I/O系统收官（计组提前胜利通关！）',
     math2Task: {
       id: 'math2-1021',
       date: '2026-10-21',
@@ -836,25 +837,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1019',
+      id: 'co-1021-io',
       date: '2026-10-21',
       dayIndex: 14,
       subject: 'co',
-      phase: '计组决战13天',
-      title: '第6章 总线系统全盘速通【顺延攻坚】',
-      focusArea: '总线带宽计算 + 集中式仲裁方式优缺点 + 同步/异步定时',
+      phase: '计组决战 · 尾声收官',
+      title: '第7章 I/O系统与计组全面大收官！【计组提前大通关，明天会师OS！】',
+      focusArea: '统一编址 vs 独立编址 + 程序中断 vs DMA + 中断屏蔽字设置',
       coreConcepts: [
-        '总线带宽公式：带宽 = 总线工作频率 × (总线宽度 / 8) [B/s]',
-        '集中式总线仲裁：链式查询(优先级固定，对电路敏感，连线少3根)；计数器定时查询(优先级灵活，设备号线数 log2 N)；独立请求方式(响应最快，连线多 2N根)',
-        '异步定时：全互锁(最可靠，速度最慢)、半互锁、不互锁',
+        'I/O端口编址：统一编址(存储器映射，占内存地址空间，用访存指令) vs 独立编址(专门的 IN/OUT 指令，不占内存空间)',
+        '中断全流程：中断请求 -> 判优 -> 中断隐指令(硬件完成：关中断、保存断点PC、引出中断向量) -> 中断服务程序(软硬件配合：保存现场、开中断、执行服务、关中断、恢复现场、开中断、中断返回)',
+        'DMA(直接内存访问)：周期挪用/窃取访存，数据传输由硬件DMA控制器直接在主存与外设间传递，完全不经过CPU寄存器！',
       ],
-      mcqTarget: '刷透总线带宽计算与仲裁方式对比真题选择题 5 道',
-      bigQuestionTarget: '本章无独立大题，快速完成真题选择题收割',
-      recommendedProblems: ['历年统考总线带宽计算真题'],
+      mcqTarget: '做透中断与 DMA 对比、多重中断屏蔽字真题选择题',
+      bigQuestionTarget: '攻克 1 道多重中断屏蔽字与优先级分析大题（送分题）',
+      recommendedProblems: ['【2016年统考真题第44题】'],
       pitfallsToAvoid: [
-        '注意区分总线时钟周期与传输周期，若一个传输周期包含多个时钟周期，需按传输周期算有效带宽！',
+        '计组今日正式全部通关！比预期整整提前了一天！明天全军挺进操作系统！',
       ],
-      suggestedDurationMinutes: 150,
+      suggestedDurationMinutes: 200,
       isCompleted: false,
     },
     englishTask: {
@@ -869,12 +870,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.22 Day 15
+  // 10.22 Day 15 (数二全科收官！OS提前启动！)
   {
     date: '2026-10-22',
     formattedDate: '10月22日',
     weekday: '周四',
-    theme: '数二全科强化圆满收官！ · 计组I/O中断收官（计组通关！）',
+    theme: '数二全科强化圆满收官！ · 操作系统概述（OS提前一天启动！）',
     math2Task: {
       id: 'math2-1022',
       date: '2026-10-22',
@@ -899,25 +900,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'co-1020',
+      id: 'os-1022-overview',
       date: '2026-10-22',
       dayIndex: 15,
-      subject: 'co',
-      phase: '计组决战13天',
-      title: '第7章 I/O系统与计组全面大收官！【计组通关日！】',
-      focusArea: '统一编址 vs 独立编址 + 程序中断 vs DMA + 中断屏蔽字设置',
+      subject: 'os',
+      phase: '操作系统精准打击',
+      title: '第1章 操作系统概述（内核态、中断与系统调用）【OS提前启动！】',
+      focusArea: '内核态 vs 用户态 + 中断与异常分类 + 系统调用执行流程',
       coreConcepts: [
-        'I/O端口编址：统一编址(存储器映射，占内存地址空间，用访存指令) vs 独立编址(专门的 IN/OUT 指令，不占内存空间)',
-        '中断全流程：中断请求 -> 判优 -> 中断隐指令(硬件完成：关中断、保存断点PC、引出中断向量) -> 中断服务程序(软硬件配合：保存现场、开中断、执行服务、关中断、恢复现场、开中断、中断返回)',
-        'DMA(直接内存访问)：周期挪用/窃取访存，数据传输由硬件DMA控制器直接在主存与外设间传递，完全不经过CPU寄存器！',
+        'CPU状态：用户态(目态，只能执行非特权指令) vs 内核态(管态，特权指令如清内存、改中断屏蔽字)；用户态向内核态切换只能通过中断/异常！',
+        '中断分类：内中断/异常(CPU内部如除以0、缺页、访管指令trap) vs 外中断(CPU外部如时钟中断、I/O中断)',
+        '系统调用：用户通过访管指令产生软中断请求OS内核服务，参数传递通过寄存器完成',
       ],
-      mcqTarget: '做透中断与 DMA 对比、多重中断屏蔽字真题选择题',
-      bigQuestionTarget: '攻克 1 道多重中断屏蔽字与优先级分析大题（送分题）',
-      recommendedProblems: ['【2016年统考真题第44题】'],
+      mcqTarget: '做透历年统考真题第1章选择题 6 道（全部标年份真题）',
+      bigQuestionTarget: '第1章无大题，迅速推进，为明天进程管理大题留出精力',
+      recommendedProblems: ['历年统考特权指令与中断分类选择题'],
       pitfallsToAvoid: [
-        '计组今天正式圆满结课！明天（10.23）数二拔剑真题的同时，408全军无缝杀入操作系统！',
+        '访管指令(trap指令)是在用户态下执行的，执行后CPU硬件切换到内核态！',
       ],
-      suggestedDurationMinutes: 210,
+      suggestedDurationMinutes: 180,
       isCompleted: false,
     },
     englishTask: {
@@ -932,12 +933,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.23 Day 16: 数二真题启航日！408操作系统启动！
+  // 10.23 Day 16: 数二真题启航日！操作系统进程管理
   {
     date: '2026-10-23',
     formattedDate: '10月23日',
     weekday: '周五',
-    theme: '【数二拔剑真题套卷日！】 · 操作系统概述（OS启动！）',
+    theme: '【数二拔剑真题套卷日！】 · 操作系统进程与调度算法甘特图',
     math2Task: {
       id: 'math2-1023',
       date: '2026-10-23',
@@ -960,25 +961,25 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'os-1021',
+      id: 'os-1023-process',
       date: '2026-10-23',
       dayIndex: 16,
       subject: 'os',
       phase: '操作系统精准打击',
-      title: '第1章 操作系统概述（内核态、中断与系统调用）【OS启动！】',
-      focusArea: '内核态 vs 用户态 + 中断与异常分类 + 系统调用执行流程',
+      title: '第2章 进程管理（概念、状态转换与调度算法甘特图）',
+      focusArea: 'PCB与进程五状态 + 内核级 vs 用户级线程 + 调度算法周转时间计算',
       coreConcepts: [
-        'CPU状态：用户态(目态，只能执行非特权指令) vs 内核态(管态，特权指令如清内存、改中断屏蔽字)；用户态向内核态切换只能通过中断/异常！',
-        '中断分类：内中断/异常(CPU内部如除以0、缺页、访管指令trap) vs 外中断(CPU外部如时钟中断、I/O中断)',
-        '系统调用：用户通过访管指令产生软中断请求OS内核服务，参数传递通过寄存器完成',
+        '进程状态转换：就绪 -> 运行 -> 阻塞；运行态可转就绪(时间片到)或阻塞(等I/O)；阻塞态只能转就绪(I/O完成)！',
+        '内核级线程(OS可见，独立调度单位) vs 用户级线程(用户空间线程库管理，OS只看到进程，系统调用会阻塞整个进程)',
+        '经典调度算法：FCFS、SJF(平均等待时间最短)、HRRN高响应比优先(响应比 = 1 + 等待时间/运行时间)、多级反馈队列',
       ],
-      mcqTarget: '做透历年统考真题第1章选择题 6 道（全部标年份真题）',
-      bigQuestionTarget: '第1章无大题，迅速推进，为明天进程管理大题留出精力',
-      recommendedProblems: ['历年统考特权指令与中断分类选择题'],
+      mcqTarget: '做透进程状态转换条件与线程模型真题选择题 4 道',
+      bigQuestionTarget: '攻克 1 道画甘特图计算平均周转时间与平均带权周转时间的大题',
+      recommendedProblems: ['讲义调度算法甘特图计算经典题'],
       pitfallsToAvoid: [
-        '访管指令(trap指令)是在用户态下执行的，执行后CPU硬件切换到内核态！',
+        '周转时间 = 完成时刻 - 到达时刻；带权周转时间 = 周转时间 / 服务运行时间',
       ],
-      suggestedDurationMinutes: 180,
+      suggestedDurationMinutes: 210,
       isCompleted: false,
     },
     englishTask: {
@@ -993,12 +994,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.24 Day 17: 数二真题第2套演练 · 操作系统进程与调度算法甘特图
+  // 10.24 Day 17: 数二真题第2套演练 · 操作系统PV三大模型攻坚
   {
     date: '2026-10-24',
     formattedDate: '10月24日',
     weekday: '周六',
-    theme: '数二真题第2套演练 · 操作系统进程与调度算法甘特图',
+    theme: '数二真题第2套演练 · 操作系统PV三大模型攻坚（年年必考大题！）',
     math2Task: {
       id: 'math2-1024',
       date: '2026-10-24',
@@ -1021,23 +1022,23 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'os-1022',
+      id: 'os-1024-pv',
       date: '2026-10-24',
       dayIndex: 17,
       subject: 'os',
       phase: '操作系统精准打击',
-      title: '第2章 进程管理（概念、状态转换与调度算法甘特图）',
-      focusArea: 'PCB与进程五状态 + 内核级 vs 用户级线程 + 调度算法周转时间计算',
+      title: '第2章 进程同步互斥与三大基础 PV 模型（年年必考大题！）',
+      focusArea: '临界区互斥原则 + 信号量机制 + 生产者-消费者 + 读者-写者',
       coreConcepts: [
-        '进程状态转换：就绪 -> 运行 -> 阻塞；运行态可转就绪(时间片到)或阻塞(等I/O)；阻塞态只能转就绪(I/O完成)！',
-        '内核级线程(OS可见，独立调度单位) vs 用户级线程(用户空间线程库管理，OS只看到进程，系统调用会阻塞整个进程)',
-        '经典调度算法：FCFS、SJF(平均等待时间最短)、HRRN高响应比优先(响应比 = 1 + 等待时间/运行时间)、多级反馈队列',
+        '信号量操作：P(S) 表示申请资源(S=S-1, S<0阻塞入等待队列)；V(S) 表示释放资源(S=S+1, S<=0唤醒进程)',
+        '生产者-消费者模型：mutex(互斥缓冲区)=1, empty(空缓冲区)=N, full(满缓冲区)=0；注意 P(empty) 在 P(mutex) 之前！',
+        '读者-写者问题：读优先与写优先模板，读者计数器 readcount 与互斥访问 mutex',
       ],
-      mcqTarget: '做透进程状态转换条件与线程模型真题选择题 4 道',
-      bigQuestionTarget: '攻克 1 道画甘特图计算平均周转时间与平均带权周转时间的大题',
-      recommendedProblems: ['讲义调度算法甘特图计算经典题'],
+      mcqTarget: '做透临界区硬件实现(TSL, Swap)与软件实现(Peterson算法)真题选择题',
+      bigQuestionTarget: '亲手规范书写生产者-消费者与读者-写者的标准伪代码',
+      recommendedProblems: ['讲义经典生产者-消费者变形模型手写代码'],
       pitfallsToAvoid: [
-        '周转时间 = 完成时刻 - 到达时刻；带权周转时间 = 周转时间 / 服务运行时间',
+        '同步P操作必须在互斥P操作之前！否则一旦互斥先锁住又缺乏资源，必然导致死锁！',
       ],
       suggestedDurationMinutes: 210,
       isCompleted: false,
@@ -1054,12 +1055,12 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     },
   },
 
-  // 10.25 Day 18: 数二真题两套错题大复盘 · 操作系统PV三大模型攻坚
+  // 10.25 Day 18: 数二真题两套错题大复盘 · 操作系统哲学家进餐与真题PV攻坚
   {
     date: '2026-10-25',
     formattedDate: '10月25日',
     weekday: '周日',
-    theme: '数二真题两套错题大复盘 · 操作系统PV三大模型攻坚',
+    theme: '数二真题两套错题大复盘 · 操作系统哲学家进餐与真题PV攻坚',
     math2Task: {
       id: 'math2-1025',
       date: '2026-10-25',
@@ -1082,23 +1083,22 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       isCompleted: false,
     },
     csTask: {
-      id: 'os-1023',
+      id: 'os-1025-pv-deep',
       date: '2026-10-25',
       dayIndex: 18,
       subject: 'os',
       phase: '操作系统精准打击',
-      title: '第2章 进程同步互斥与三大基础 PV 模型（年年必考大题！）',
-      focusArea: '临界区互斥原则 + 信号量机制 + 生产者-消费者 + 读者-写者',
+      title: '第2章 哲学家进餐与历年真题 PV 变形大题攻坚（2014独木桥/2019真题）',
+      focusArea: '哲学家进餐奇偶号拿筷子/同时拿两只筷子 + 历年统考复杂 PV 题型拆解',
       coreConcepts: [
-        '信号量操作：P(S) 表示申请资源(S=S-1, S<0阻塞入等待队列)；V(S) 表示释放资源(S=S+1, S<=0唤醒进程)',
-        '生产者-消费者模型：mutex(互斥缓冲区)=1, empty(空缓冲区)=N, full(满缓冲区)=0；注意 P(empty) 在 P(mutex) 之前！',
-        '读者-写者问题：读优先与写优先模板，读者计数器 readcount 与互斥访问 mutex',
+        '哲学家进餐破坏死锁环路：奇数号先拿左再拿右，偶数号先拿右再拿左；或者至多允许 4 个人同时拿筷子',
+        '统考真题大题突破：提炼进程动作 -> 识别同步信号量（谁产生资源谁释放V，谁消费资源谁申请P） -> 设立互斥锁 mutex',
       ],
-      mcqTarget: '做透临界区硬件实现(TSL, Swap)与软件实现(Peterson算法)真题选择题',
-      bigQuestionTarget: '亲手规范书写生产者-消费者与读者-写者的标准伪代码',
-      recommendedProblems: ['讲义经典生产者-消费者变形模型手写代码'],
+      mcqTarget: '做透死锁产生的四个必要条件与解除死锁真题选择题 4 道',
+      bigQuestionTarget: '亲手在草稿纸上规范写出 1 道近十年统考真题高难 PV 大题',
+      recommendedProblems: ['【2014年统考独木桥过桥真题】或【2019年统考真题第45题】'],
       pitfallsToAvoid: [
-        '同步P操作必须在互斥P操作之前！否则一旦互斥先锁住又缺乏资源，必然导致死锁！',
+        'PV大题代码格式一定要工整，每个 semaphore 赋初值必须写在最开头！',
       ],
       suggestedDurationMinutes: 210,
       isCompleted: false,
@@ -1119,38 +1119,37 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
 export const SUBSEQUENT_PHASES = [
   {
     phaseName: 'OS大题与跨学科攻坚期',
-    dateRange: '10月26日 - 11月02日',
+    dateRange: '10月26日 - 11月01日',
     keyMilestones: [
-      '10.26: OS 哲学家进餐与真题PV攻坚（2014独木桥/2019真题）',
-      '10.27: 死锁四条件与银行家算法安全性大题（送分必拿满）',
-      '10.28: 传统内存分页分段管理与逻辑物理地址转换',
-      '10.29: 请求分页与页面置换算法（OPT/FIFO/LRU/CLOCK）',
-      '10.30: 【重磅】计组×OS跨学科虚拟地址TLB-页表-Cache寻址全链路（2011/2018真题大题）',
-      '10.31: 文件管理多级索引大题计算',
-      '11.01: 磁盘调度算法（SSTF/SCAN/C-SCAN）与I/O软件SPOOLing',
-      '11.02: OS全书收官！数二持续真题轮动',
+      '10.26: 死锁四条件与银行家算法安全性大题（送分必拿满）',
+      '10.27: 传统内存分页分段管理与逻辑物理地址转换',
+      '10.28: 请求分页与页面置换算法（OPT/FIFO/LRU/CLOCK）',
+      '10.29: 【重磅】计组×OS跨学科虚拟地址TLB-页表-Cache寻址全链路（2011/2018真题大题）',
+      '10.30: 文件管理多级索引大题计算',
+      '10.31: 磁盘调度算法（SSTF/SCAN/C-SCAN）与I/O软件SPOOLing',
+      '11.01: OS全书收官！数二持续真题轮动',
     ],
   },
   {
     phaseName: '计网精简速通与408强化大结课',
-    dateRange: '11月03日 - 11月11日',
+    dateRange: '11月02日 - 11月10日',
     keyMilestones: [
-      '11.03: 奈氏准则与香农公式极限速率计算',
-      '11.04: CRC循环冗余校验与滑动窗口协议（GBN/SR）',
-      '11.05: CSMA/CD最小帧长公式与以太网交换机自学习',
-      '11.06: 【必考】CIDR子网划分与路由聚合大题（2012年47题）',
-      '11.07: ARP/DHCP/NAT转换与最长前缀匹配转发',
-      '11.08: RIP/OSPF/BGP路由算法与网络层综合大题（2015/2017真题）',
-      '11.09: TCP三次握手四次挥手状态机与拥塞控制折线图（2013/2019真题）',
-      '11.10: DNS递归迭代与HTTP持久非持久RTT时延计算',
-      '11.11: 【终极串联】浏览器输入URL全流程协议回顾，408全科强化胜利大闭幕，正式合流真题套卷！',
+      '11.02: 奈氏准则与香农公式极限速率计算',
+      '11.03: CRC循环冗余校验与滑动窗口协议（GBN/SR）',
+      '11.04: CSMA/CD最小帧长公式与以太网交换机自学习',
+      '11.05: 【必考】CIDR子网划分与路由聚合大题（2012年47题）',
+      '11.06: ARP/DHCP/NAT转换与最长前缀匹配转发',
+      '11.07: RIP/OSPF/BGP路由算法与网络层综合大题（2015/2017真题）',
+      '11.08: TCP三次握手四次挥手状态机与拥塞控制折线图（2013/2019真题）',
+      '11.09: DNS递归迭代与HTTP持久非持久RTT时延计算',
+      '11.10: 【终极串联】浏览器输入URL全流程协议回顾，408全科强化胜利大闭幕，正式合流真题套卷！',
     ],
   },
   {
     phaseName: '决战真题与模拟冲刺期',
-    dateRange: '11月12日 - 考前',
+    dateRange: '11月11日 - 考前',
     keyMilestones: [
-      '11.12起: 408历年真题套卷（2010-2024）全真限时模考（14:00-17:00）',
+      '11.11起: 408历年真题套卷（2010-2024）全真限时模考（14:00-17:00）',
       '11.10起: 政治全面切换为《肖八》选择题狂刷 + 时政专题',
       '11月中旬: 英语启动新题型集中攻坚（技巧课+真题专项）',
       '12.01起: 政治狂背《肖四》主观大题 + 英语考场全真模拟 + 数学李林6套卷/4套卷押题练手',
