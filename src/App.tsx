@@ -13,6 +13,7 @@ import { SubjectArmory } from './components/SubjectArmory';
 import { DailyWorkstation } from './components/DailyWorkstation';
 import { MindsetEmergencyBunker } from './components/MindsetEmergencyBunker';
 import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 'lucide-react';
+import { triggerTaskCompletionFireworks, triggerDayCompleteGrandFinale } from './utils/confetti';
 
 const STORAGE_KEY = 'kaoyan_battle_station_plans_v4';
 const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
@@ -20,6 +21,48 @@ const EXAM_TARGET_DATE = new Date('2026-12-26T08:30:00');
 const MATH_PAPERS_DATE = new Date('2026-10-23T08:30:00');
 const CS_PAPERS_DATE = new Date('2026-11-11T14:00:00');
 const XIAO8_DATE = new Date('2026-11-10T00:00:00');
+
+/**
+ * Computes today's date in local time, mapping accurately to the battle schedule
+ */
+export function getTodayOrEffectiveDate(plans: DayPlan[]): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+
+  // 1. Direct exact match with current plan date (e.g. 2026-10-14)
+  if (plans.some((p) => p.date === todayStr)) {
+    return todayStr;
+  }
+
+  // 2. Month-day match in 2026 if user's system clock is set to current month-day
+  const monthDayStr = `2026-${mm}-${dd}`;
+  if (plans.some((p) => p.date === monthDayStr)) {
+    return monthDayStr;
+  }
+
+  // 3. If today is earlier than the first battle plan, default to first day
+  if (plans.length > 0 && todayStr < plans[0].date) {
+    return plans[0].date;
+  }
+
+  // 4. If today is later than the last battle plan, default to last day
+  if (plans.length > 0 && todayStr > plans[plans.length - 1].date) {
+    return plans[plans.length - 1].date;
+  }
+
+  // 5. Fallback: find the first plan that has uncompleted math or CS tasks
+  const uncompleted = plans.find(
+    (p) => (p.math2Task && !p.math2Task.isCompleted) || (p.csTask && !p.csTask.isCompleted)
+  );
+  if (uncompleted) {
+    return uncompleted.date;
+  }
+
+  return plans[0]?.date || '2026-10-14';
+}
 
 // Smart merge function: preserves user checkmarks and notes by Task ID or date, but loads updated schedule content
 function mergeSavedWithInitial(savedList: DayPlan[], initialList: DayPlan[]): DayPlan[] {
@@ -64,6 +107,14 @@ function mergeSavedWithInitial(savedList: DayPlan[], initialList: DayPlan[]): Da
             notes: csSave?.notes ?? datePlan?.csTask?.notes ?? initPlan.csTask.notes,
           }
         : undefined,
+      englishTask: {
+        ...initPlan.englishTask,
+        isCompleted: datePlan?.englishTask?.isCompleted ?? false,
+      },
+      politicsTask: {
+        ...initPlan.politicsTask,
+        isCompleted: datePlan?.politicsTask?.isCompleted ?? false,
+      },
     };
   });
 }
@@ -94,7 +145,10 @@ export default function App() {
     return INITIAL_DAY_PLANS;
   });
 
-  const [selectedDate, setSelectedDate] = useState<string>('2026-10-08');
+  // Automatically default to today's date upon refresh or load
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    return getTodayOrEffectiveDate(INITIAL_DAY_PLANS);
+  });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync to local storage
@@ -111,20 +165,40 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
+  // Check if a day's 4 core tasks are fully conquered and trigger grand fireworks
+  const checkDayCompletion = (plan: DayPlan) => {
+    const mathDone = !plan.math2Task || plan.math2Task.isCompleted;
+    const csDone = !plan.csTask || plan.csTask.isCompleted;
+    const englishDone = !plan.englishTask || plan.englishTask.isCompleted;
+    const politicsDone = !plan.politicsTask || plan.politicsTask.isCompleted;
+
+    if (mathDone && csDone && englishDone && politicsDone) {
+      setTimeout(() => {
+        triggerDayCompleteGrandFinale();
+        showToast(`🏆 战力爆发！${plan.formattedDate} 当日四科战备全部圆满收官！`);
+      }, 400);
+    }
+  };
+
   // Toggle Math task
   const handleToggleMathComplete = (taskId: string) => {
     setPlans((prev) =>
       prev.map((plan) => {
         if (plan.math2Task?.id === taskId) {
           const nextVal = !plan.math2Task.isCompleted;
-          if (nextVal) showToast(`已攻克：${plan.math2Task.title.slice(0, 16)}...`);
-          return {
+          if (nextVal) {
+            triggerTaskCompletionFireworks();
+            showToast(`🎉 攻克数二母题：${plan.math2Task.title.slice(0, 16)}...`);
+          }
+          const updated = {
             ...plan,
             math2Task: {
               ...plan.math2Task,
               isCompleted: nextVal,
             },
           };
+          if (nextVal) checkDayCompletion(updated);
+          return updated;
         }
         return plan;
       })
@@ -137,14 +211,69 @@ export default function App() {
       prev.map((plan) => {
         if (plan.csTask?.id === taskId) {
           const nextVal = !plan.csTask.isCompleted;
-          if (nextVal) showToast(`已攻克：${plan.csTask.title.slice(0, 16)}...`);
-          return {
+          if (nextVal) {
+            triggerTaskCompletionFireworks();
+            showToast(`🎉 攻克408重点：${plan.csTask.title.slice(0, 16)}...`);
+          }
+          const updated = {
             ...plan,
             csTask: {
               ...plan.csTask,
               isCompleted: nextVal,
             },
           };
+          if (nextVal) checkDayCompletion(updated);
+          return updated;
+        }
+        return plan;
+      })
+    );
+  };
+
+  // Toggle English routine task
+  const handleToggleEnglishComplete = (date: string) => {
+    setPlans((prev) =>
+      prev.map((plan) => {
+        if (plan.date === date) {
+          const nextVal = !plan.englishTask.isCompleted;
+          if (nextVal) {
+            triggerTaskCompletionFireworks();
+            showToast(`🎉 拿下考研英语任务：${plan.englishTask.title}`);
+          }
+          const updated = {
+            ...plan,
+            englishTask: {
+              ...plan.englishTask,
+              isCompleted: nextVal,
+            },
+          };
+          if (nextVal) checkDayCompletion(updated);
+          return updated;
+        }
+        return plan;
+      })
+    );
+  };
+
+  // Toggle Politics routine task
+  const handleTogglePoliticsComplete = (date: string) => {
+    setPlans((prev) =>
+      prev.map((plan) => {
+        if (plan.date === date) {
+          const nextVal = !plan.politicsTask.isCompleted;
+          if (nextVal) {
+            triggerTaskCompletionFireworks();
+            showToast(`🎉 拿下考研政治防守反击：${plan.politicsTask.title}`);
+          }
+          const updated = {
+            ...plan,
+            politicsTask: {
+              ...plan.politicsTask,
+              isCompleted: nextVal,
+            },
+          };
+          if (nextVal) checkDayCompletion(updated);
+          return updated;
         }
         return plan;
       })
@@ -231,6 +360,7 @@ export default function App() {
   const daysToCsPastPapers = getDiffDays(CS_PAPERS_DATE);
   const daysToXiao8 = getDiffDays(XIAO8_DATE);
 
+  const todayDateStr = getTodayOrEffectiveDate(plans);
   const currentPlan = plans.find((p) => p.date === selectedDate) || plans[0];
 
   return (
@@ -257,9 +387,13 @@ export default function App() {
           <DashboardOverview
             currentDayPlan={currentPlan}
             allPlans={plans}
+            todayDateStr={todayDateStr}
             onSelectDay={setSelectedDate}
+            onJumpToToday={() => setSelectedDate(todayDateStr)}
             onToggleMathComplete={handleToggleMathComplete}
             onToggleCsComplete={handleToggleCsComplete}
+            onToggleEnglishComplete={handleToggleEnglishComplete}
+            onTogglePoliticsComplete={handleTogglePoliticsComplete}
             onSaveDayNotes={handleSaveDayNotes}
             onNavigateToTab={setActiveTab}
             daysToExam={daysToExam}
@@ -273,9 +407,13 @@ export default function App() {
           <DailyTimeline
             plans={plans}
             selectedDate={selectedDate}
+            todayDateStr={todayDateStr}
             onSelectDay={setSelectedDate}
+            onJumpToToday={() => setSelectedDate(todayDateStr)}
             onToggleMathComplete={handleToggleMathComplete}
             onToggleCsComplete={handleToggleCsComplete}
+            onToggleEnglishComplete={handleToggleEnglishComplete}
+            onTogglePoliticsComplete={handleTogglePoliticsComplete}
           />
         )}
 

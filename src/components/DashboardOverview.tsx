@@ -18,9 +18,13 @@ import {
 interface DashboardOverviewProps {
   currentDayPlan: DayPlan;
   allPlans: DayPlan[];
+  todayDateStr?: string;
   onSelectDay: (date: string) => void;
+  onJumpToToday?: () => void;
   onToggleMathComplete: (taskId: string) => void;
   onToggleCsComplete: (taskId: string) => void;
+  onToggleEnglishComplete?: (date: string) => void;
+  onTogglePoliticsComplete?: (date: string) => void;
   onSaveDayNotes: (date: string, notes: string) => void;
   onNavigateToTab: (tab: 'timeline' | 'armory' | 'workstation' | 'mindset') => void;
   daysToExam: number;
@@ -32,9 +36,13 @@ interface DashboardOverviewProps {
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   currentDayPlan,
   allPlans,
+  todayDateStr,
   onSelectDay,
+  onJumpToToday,
   onToggleMathComplete,
   onToggleCsComplete,
+  onToggleEnglishComplete,
+  onTogglePoliticsComplete,
   onSaveDayNotes,
   onNavigateToTab,
   daysToExam,
@@ -86,6 +94,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {todayDateStr && currentDayPlan.date !== todayDateStr && (
+              <button
+                onClick={onJumpToToday}
+                className="flex items-center gap-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-2.5 py-2 text-xs font-semibold text-amber-300 transition-all shadow-xs"
+                title="一键切回今天真实代办"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                <span>回到今日</span>
+              </button>
+            )}
             <select
               value={currentDayPlan.date}
               onChange={(e) => onSelectDay(e.target.value)}
@@ -93,7 +111,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             >
               {allPlans.map((plan) => (
                 <option key={plan.date} value={plan.date}>
-                  {plan.formattedDate} ({plan.weekday}) - {plan.theme.slice(0, 16)}...
+                  {plan.formattedDate} ({plan.weekday}) {plan.date === todayDateStr ? '★ 今日' : ''} - {plan.theme.slice(0, 14)}...
                 </option>
               ))}
             </select>
@@ -236,13 +254,21 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
       {/* 4. Today's Action Checklist (The Real Battlefield) */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <BookMarked className="h-4 w-4 text-amber-400" />
-            <h2 className="text-base font-bold text-white">今日落地作战清单 (Today's Directives)</h2>
+            <h2 className="text-base font-bold text-white">
+              {currentDayPlan.date === todayDateStr ? "今日落地作战清单 (Today's Directives)" : `${currentDayPlan.formattedDate} 作战清单`}
+            </h2>
+            {currentDayPlan.date === todayDateStr && (
+              <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">
+                今日实时代办
+              </span>
+            )}
           </div>
-          <span className="text-xs text-slate-400">
-            打勾状态将自动保存在本地，无需刷新
+          <span className="text-xs text-amber-300/90 flex items-center gap-1 font-medium">
+            <span>完成代办即绽放礼炮烟花 🎆</span>
+            <span className="text-slate-500 hidden sm:inline">· 本地自动实时保存</span>
           </span>
         </div>
 
@@ -259,7 +285,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <div className="flex items-start justify-between gap-3 mb-3">
                 <button
                   onClick={() => onToggleMathComplete(currentDayPlan.math2Task!.id)}
-                  className="flex items-center gap-2 text-left group"
+                  className="flex items-center gap-2 text-left group cursor-pointer"
                 >
                   {currentDayPlan.math2Task.isCompleted ? (
                     <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
@@ -325,7 +351,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <div className="flex items-start justify-between gap-3 mb-3">
                 <button
                   onClick={() => onToggleCsComplete(currentDayPlan.csTask!.id)}
-                  className="flex items-center gap-2 text-left group"
+                  className="flex items-center gap-2 text-left group cursor-pointer"
                 >
                   {currentDayPlan.csTask.isCompleted ? (
                     <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
@@ -380,18 +406,40 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           )}
 
           {/* English Routine Card */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-medium text-emerald-400">
-                [考研英语] 傍晚 18:30 - 20:00 (严格限时)
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">
+          <div
+            className={`rounded-xl border p-4 transition-colors ${
+              currentDayPlan.englishTask.isCompleted
+                ? 'border-emerald-800/60 bg-emerald-950/20'
+                : 'border-slate-800 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <button
+                onClick={() => onToggleEnglishComplete?.(currentDayPlan.date)}
+                className="flex items-center gap-2 text-left group cursor-pointer"
+              >
+                {currentDayPlan.englishTask.isCompleted ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                ) : (
+                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-emerald-400 shrink-0" />
+                )}
+                <div>
+                  <span className="text-xs font-mono font-medium text-emerald-400">
+                    [考研英语] 傍晚 18:30 - 20:00 (严格限时)
+                  </span>
+                  <h3
+                    className={`text-sm font-semibold text-white ${
+                      currentDayPlan.englishTask.isCompleted ? 'line-through text-slate-400' : ''
+                    }`}
+                  >
+                    {currentDayPlan.englishTask.title}
+                  </h3>
+                </div>
+              </button>
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
                 {currentDayPlan.englishTask.durationMinutes} 分钟
               </span>
             </div>
-            <h3 className="text-sm font-semibold text-white mb-2">
-              {currentDayPlan.englishTask.title}
-            </h3>
             <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
               {currentDayPlan.englishTask.action}
             </p>
@@ -401,18 +449,40 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           {/* Politics Routine Card */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-mono font-medium text-indigo-400">
-                [考研政治] 夜间 22:00 - 23:00 (防守反击)
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">
+          <div
+            className={`rounded-xl border p-4 transition-colors ${
+              currentDayPlan.politicsTask.isCompleted
+                ? 'border-emerald-800/60 bg-emerald-950/20'
+                : 'border-slate-800 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <button
+                onClick={() => onTogglePoliticsComplete?.(currentDayPlan.date)}
+                className="flex items-center gap-2 text-left group cursor-pointer"
+              >
+                {currentDayPlan.politicsTask.isCompleted ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                ) : (
+                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 shrink-0" />
+                )}
+                <div>
+                  <span className="text-xs font-mono font-medium text-indigo-400">
+                    [考研政治] 夜间 22:00 - 23:00 (防守反击)
+                  </span>
+                  <h3
+                    className={`text-sm font-semibold text-white ${
+                      currentDayPlan.politicsTask.isCompleted ? 'line-through text-slate-400' : ''
+                    }`}
+                  >
+                    {currentDayPlan.politicsTask.title}
+                  </h3>
+                </div>
+              </button>
+              <span className="text-[11px] font-mono text-slate-400 shrink-0">
                 {currentDayPlan.politicsTask.durationMinutes} 分钟
               </span>
             </div>
-            <h3 className="text-sm font-semibold text-white mb-2">
-              {currentDayPlan.politicsTask.title}
-            </h3>
             <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
               {currentDayPlan.politicsTask.action}
             </p>

@@ -18,6 +18,13 @@ export interface DailyTaskItem {
   notes?: string;
 }
 
+export interface DailyRoutineTask {
+  title: string;
+  action: string;
+  durationMinutes: number;
+  isCompleted?: boolean;
+}
+
 export interface DayPlan {
   date: string; // YYYY-MM-DD
   formattedDate: string; // e.g. "10月8日"
@@ -25,16 +32,8 @@ export interface DayPlan {
   theme: string;
   math2Task?: DailyTaskItem;
   csTask?: DailyTaskItem;
-  englishTask: {
-    title: string;
-    action: string;
-    durationMinutes: number;
-  };
-  politicsTask: {
-    title: string;
-    action: string;
-    durationMinutes: number;
-  };
+  englishTask: DailyRoutineTask;
+  politicsTask: DailyRoutineTask;
 }
 
 export interface DailyScheduleSlot {

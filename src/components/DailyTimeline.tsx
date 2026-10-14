@@ -19,17 +19,25 @@ import {
 interface DailyTimelineProps {
   plans: DayPlan[];
   selectedDate: string;
+  todayDateStr?: string;
   onSelectDay: (date: string) => void;
+  onJumpToToday?: () => void;
   onToggleMathComplete: (taskId: string) => void;
   onToggleCsComplete: (taskId: string) => void;
+  onToggleEnglishComplete?: (date: string) => void;
+  onTogglePoliticsComplete?: (date: string) => void;
 }
 
 export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   plans,
   selectedDate,
+  todayDateStr,
   onSelectDay,
+  onJumpToToday,
   onToggleMathComplete,
   onToggleCsComplete,
+  onToggleEnglishComplete,
+  onTogglePoliticsComplete,
 }) => {
   const [subjectFilter, setSubjectFilter] = useState<'all' | 'math2' | 'cs'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -74,6 +82,24 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {todayDateStr && (
+            <button
+              onClick={() => {
+                onJumpToToday?.();
+                setExpandedDate(todayDateStr);
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+                selectedDate === todayDateStr
+                  ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                  : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+              }`}
+              title="快速聚焦到今日战况"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+              <span>回到今日</span>
+            </button>
+          )}
+
           {/* Subject Filter Tabs */}
           <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-1 text-xs">
             <button
@@ -183,6 +209,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       <h3 className="text-sm font-bold text-white">
                         {plan.theme}
                       </h3>
+                      {plan.date === todayDateStr && (
+                        <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">
+                          ★ 今日实战
+                        </span>
+                      )}
                       {allCompleted && (
                         <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1 font-semibold">
                           <CheckCircle2 className="h-3 w-3" /> 当日收官
@@ -367,15 +398,52 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     </div>
                   )}
 
-                  {/* English & Politics Summary */}
+                  {/* English & Politics Interactive Tasks */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-slate-900/30 p-2.5 rounded border border-slate-800/60">
-                      <span className="text-emerald-400 font-semibold">[英语] 18:30-20:00：</span>
-                      <p className="text-slate-400 mt-0.5">{plan.englishTask.action}</p>
+                    <div
+                      className={`p-2.5 rounded border transition-colors ${
+                        plan.englishTask.isCompleted
+                          ? 'bg-emerald-950/20 border-emerald-800/50'
+                          : 'bg-slate-900/30 border-slate-800/60'
+                      }`}
+                    >
+                      <button
+                        onClick={() => onToggleEnglishComplete?.(plan.date)}
+                        className="flex items-center gap-1.5 text-left font-semibold text-emerald-400 mb-1 cursor-pointer group"
+                      >
+                        {plan.englishTask.isCompleted ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 text-slate-500 group-hover:text-emerald-400 shrink-0" />
+                        )}
+                        <span className={plan.englishTask.isCompleted ? 'line-through text-slate-400' : ''}>
+                          [英语] {plan.englishTask.title}
+                        </span>
+                      </button>
+                      <p className="text-slate-400 pl-5 leading-relaxed">{plan.englishTask.action}</p>
                     </div>
-                    <div className="bg-slate-900/30 p-2.5 rounded border border-slate-800/60">
-                      <span className="text-indigo-400 font-semibold">[政治] 22:00-23:00：</span>
-                      <p className="text-slate-400 mt-0.5">{plan.politicsTask.action}</p>
+
+                    <div
+                      className={`p-2.5 rounded border transition-colors ${
+                        plan.politicsTask.isCompleted
+                          ? 'bg-emerald-950/20 border-emerald-800/50'
+                          : 'bg-slate-900/30 border-slate-800/60'
+                      }`}
+                    >
+                      <button
+                        onClick={() => onTogglePoliticsComplete?.(plan.date)}
+                        className="flex items-center gap-1.5 text-left font-semibold text-indigo-400 mb-1 cursor-pointer group"
+                      >
+                        {plan.politicsTask.isCompleted ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 text-slate-500 group-hover:text-indigo-400 shrink-0" />
+                        )}
+                        <span className={plan.politicsTask.isCompleted ? 'line-through text-slate-400' : ''}>
+                          [政治] {plan.politicsTask.title}
+                        </span>
+                      </button>
+                      <p className="text-slate-400 pl-5 leading-relaxed">{plan.politicsTask.action}</p>
                     </div>
                   </div>
                 </div>
