@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Target, Sparkles, BookOpen, Clock, HeartHandshake, Volume2, VolumeX } from 'lucide-react';
+import { getChinaDateInfo } from '../utils/chinaDate';
 
 interface HeaderProps {
   activeTab: 'dashboard' | 'timeline' | 'armory' | 'workstation' | 'mindset';
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   soundMuted,
   onToggleSound,
 }) => {
+  const chinaDate = getChinaDateInfo();
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -127,6 +129,14 @@ export const Header: React.FC<HeaderProps> = ({
               </>
             )}
           </button>
+
+          <div className="hidden xl:flex items-center gap-1.5 rounded-lg border border-emerald-900/40 bg-emerald-950/40 px-2.5 py-1.5 text-xs text-emerald-300 font-mono">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>东八区 {chinaDate.formattedDate} {chinaDate.weekday}</span>
+          </div>
 
           <div className="hidden lg:flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs">
             <span className="text-slate-400">10.23 数二真题:</span>

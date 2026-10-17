@@ -89,7 +89,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
               核心方针：<span className="text-amber-300 font-medium">战力爆发，科学突击，死守 10.23 数二真题与 11.11 全真套卷</span>。
-              数二线代今日（10.14）正式启动张宇知识树7天精准突击，10.20完成全部章节强化，10.21一张网大串联；408稳扎稳打全速推进！
+              数二线代紧扣张宇知识树7天精准突击，10.20完成全部章节强化，10.21一张网大串联；408稳扎稳打全速推进！
             </p>
           </div>
 
@@ -262,7 +262,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </h2>
             {currentDayPlan.date === todayDateStr && (
               <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">
-                今日实时代办
+                东八区 · 今日实时代办
               </span>
             )}
           </div>

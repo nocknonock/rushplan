@@ -14,49 +14,16 @@ import { DailyWorkstation } from './components/DailyWorkstation';
 import { MindsetEmergencyBunker } from './components/MindsetEmergencyBunker';
 import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 'lucide-react';
 import { triggerTaskCelebration, triggerDayCompletionCelebration, soundManager } from './utils/celebration';
+import { getChinaDateInfo, getChinaTodayPlanDate, getChinaCalendarDiffDays } from './utils/chinaDate';
 
 const STORAGE_KEY = 'kaoyan_battle_station_plans_v4';
 const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
-const EXAM_TARGET_DATE = new Date('2026-12-26T08:30:00');
-const MATH_PAPERS_DATE = new Date('2026-10-23T08:30:00');
-const CS_PAPERS_DATE = new Date('2026-11-11T14:00:00');
-const XIAO8_DATE = new Date('2026-11-10T00:00:00');
 
 /**
- * Computes today's date in local time, mapping accurately to the battle schedule
+ * Computes today's date in China Standard Time (东八区, Asia/Shanghai, UTC+8)
  */
 export function getTodayOrEffectiveDate(plans: DayPlan[]): string {
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
-  const todayStr = `${yyyy}-${mm}-${dd}`;
-  const planYearStr = `2026-${mm}-${dd}`;
-
-  // 1. Direct exact match with current plan date (e.g. 2026-10-14)
-  if (plans.some((p) => p.date === todayStr)) {
-    return todayStr;
-  }
-
-  // 2. Month-day match in 2026 (aligns user's real calendar month and day with the 2026 exam schedule)
-  if (plans.some((p) => p.date === planYearStr)) {
-    return planYearStr;
-  }
-
-  // 3. Current active milestone anchor (10.14: Linear Algebra Day 1 & Architecture Ch4)
-  if (plans.some((p) => p.date === '2026-10-14')) {
-    return '2026-10-14';
-  }
-
-  // 4. Fallback: find the first plan that has uncompleted math or CS tasks
-  const uncompleted = plans.find(
-    (p) => (p.math2Task && !p.math2Task.isCompleted) || (p.csTask && !p.csTask.isCompleted)
-  );
-  if (uncompleted) {
-    return uncompleted.date;
-  }
-
-  return plans[0]?.date || '2026-10-14';
+  return getChinaTodayPlanDate(plans);
 }
 
 // Smart merge function: preserves user checkmarks and notes by Task ID or date, but loads updated schedule content
@@ -350,20 +317,14 @@ export default function App() {
 
   const [showStorageInfo, setShowStorageInfo] = useState(false);
 
-  // Countdown calculations (anchored around Oct 7 / current time)
-  const now = new Date();
-  const getDiffDays = (target: Date) => {
-    const diff = target.getTime() - now.getTime();
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  };
+  // Countdown calculations anchored precisely to China Standard Time (东八区, UTC+8)
+  const daysToExam = getChinaCalendarDiffDays('2026-12-26');
+  const daysToMathPastPapers = getChinaCalendarDiffDays('2026-10-23');
+  const daysToCsPastPapers = getChinaCalendarDiffDays('2026-11-11');
+  const daysToXiao8 = getChinaCalendarDiffDays('2026-11-10');
 
-  const daysToExam = getDiffDays(EXAM_TARGET_DATE);
-  const daysToMathPastPapers = getDiffDays(MATH_PAPERS_DATE);
-  const daysToCsPastPapers = getDiffDays(CS_PAPERS_DATE);
-  const daysToXiao8 = getDiffDays(XIAO8_DATE);
-
-  const todayDateStr = getTodayOrEffectiveDate(plans);
-  const currentPlan = plans.find((p) => p.date === selectedDate) || plans[0];
+  const todayDateStr = getChinaTodayPlanDate(plans);
+  const currentPlan = plans.find((p) => p.date === selectedDate) || plans.find((p) => p.date === todayDateStr) || plans[0];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-['Noto_Sans_SC','Plus_Jakarta_Sans',sans-serif]">

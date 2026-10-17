@@ -218,7 +218,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       </h3>
                       {plan.date === todayDateStr && (
                         <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">
-                          ★ 今日实战
+                          ★ 东八区今日实战
                         </span>
                       )}
                       {allCompleted && (
