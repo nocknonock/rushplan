@@ -55,6 +55,8 @@ function mergeSavedWithInitial(savedList: DayPlan[], initialList: DayPlan[]): Da
 
     return {
       ...initPlan,
+      dailyNote: datePlan?.dailyNote,
+      dailyNoteUpdatedAt: datePlan?.dailyNoteUpdatedAt,
       math2Task: initPlan.math2Task
         ? {
             ...initPlan.math2Task,
@@ -249,23 +251,34 @@ export default function App() {
     );
   };
 
-  // Save notes for date
+  // Save notes for date (overall daily reflection & task note)
   const handleSaveDayNotes = (date: string, notes: string) => {
+    const trimmed = notes.trim();
+    const chinaNow = getChinaDateInfo();
+    const timestamp = `${chinaNow.month}月${chinaNow.day}日 ${chinaNow.timeStr}`;
     setPlans((prev) =>
       prev.map((plan) => {
-        if (plan.date === date && plan.math2Task) {
+        if (plan.date === date) {
           return {
             ...plan,
-            math2Task: {
-              ...plan.math2Task,
-              notes,
-            },
+            dailyNote: trimmed ? trimmed : undefined,
+            dailyNoteUpdatedAt: trimmed ? timestamp : undefined,
+            math2Task: plan.math2Task
+              ? {
+                  ...plan.math2Task,
+                  notes: trimmed,
+                }
+              : undefined,
           };
         }
         return plan;
       })
     );
-    showToast('战地复盘笔记已保存');
+    if (trimmed) {
+      showToast('📝 每日复盘与未完成备忘已保存');
+    } else {
+      showToast('📝 备忘笔记已清空');
+    }
   };
 
   // Reset all progress
@@ -379,6 +392,7 @@ export default function App() {
             onToggleCsComplete={handleToggleCsComplete}
             onToggleEnglishComplete={handleToggleEnglishComplete}
             onTogglePoliticsComplete={handleTogglePoliticsComplete}
+            onSaveDailyNote={handleSaveDayNotes}
           />
         )}
 

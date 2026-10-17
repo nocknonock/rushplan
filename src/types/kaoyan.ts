@@ -34,6 +34,8 @@ export interface DayPlan {
   csTask?: DailyTaskItem;
   englishTask: DailyRoutineTask;
   politicsTask: DailyRoutineTask;
+  dailyNote?: string; // 每日复盘与未完成留存笔记
+  dailyNoteUpdatedAt?: string; // 笔记记录或更新时间戳
 }
 
 export interface DailyScheduleSlot {

@@ -51,8 +51,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   daysToXiao8,
 }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
-  const [noteContent, setNoteContent] = useState(currentDayPlan.math2Task?.notes || '');
+  const [noteContent, setNoteContent] = useState(currentDayPlan.dailyNote || currentDayPlan.math2Task?.notes || '');
   const [isNoteSaved, setIsNoteSaved] = useState(false);
+
+  React.useEffect(() => {
+    setNoteContent(currentDayPlan.dailyNote || currentDayPlan.math2Task?.notes || '');
+  }, [currentDayPlan.date, currentDayPlan.dailyNote, currentDayPlan.math2Task?.notes]);
 
   const nextQuote = () => {
     setQuoteIndex((prev) => (prev + 1) % BOOST_QUOTES.length);

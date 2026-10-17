@@ -14,6 +14,11 @@ import {
   ArrowRight,
   Clock,
   Sparkles,
+  StickyNote,
+  FileEdit,
+  BookmarkCheck,
+  X,
+  Trash2,
 } from 'lucide-react';
 
 interface DailyTimelineProps {
@@ -26,6 +31,7 @@ interface DailyTimelineProps {
   onToggleCsComplete: (taskId: string) => void;
   onToggleEnglishComplete?: (date: string) => void;
   onTogglePoliticsComplete?: (date: string) => void;
+  onSaveDailyNote?: (date: string, note: string) => void;
 }
 
 export const DailyTimeline: React.FC<DailyTimelineProps> = ({
@@ -38,10 +44,16 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   onToggleCsComplete,
   onToggleEnglishComplete,
   onTogglePoliticsComplete,
+  onSaveDailyNote,
 }) => {
   const [subjectFilter, setSubjectFilter] = useState<'all' | 'math2' | 'cs'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [filterNotesOnly, setFilterNotesOnly] = useState<boolean>(false);
   const [expandedDate, setExpandedDate] = useState<string | null>(selectedDate);
+
+  // Note Modal state
+  const [editingPlan, setEditingPlan] = useState<DayPlan | null>(null);
+  const [noteInput, setNoteInput] = useState<string>('');
 
   // Sync expanded card whenever selectedDate changes (e.g. initial load or jump to today)
   React.useEffect(() => {
@@ -50,8 +62,35 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     }
   }, [selectedDate]);
 
+  const notesCount = plans.filter((p) => p.dailyNote && p.dailyNote.trim().length > 0).length;
+
+  const handleOpenNoteModal = (plan: DayPlan, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingPlan(plan);
+    setNoteInput(plan.dailyNote || '');
+  };
+
+  const handleSaveNote = () => {
+    if (!editingPlan) return;
+    onSaveDailyNote?.(editingPlan.date, noteInput);
+    setEditingPlan(null);
+  };
+
+  const handleClearNote = () => {
+    if (!editingPlan) return;
+    if (window.confirm('确定要清空该日的复盘笔记吗？')) {
+      onSaveDailyNote?.(editingPlan.date, '');
+      setEditingPlan(null);
+    }
+  };
+
   // Filter plans
   const filteredPlans = plans.filter((plan) => {
+    // Notes only filter
+    if (filterNotesOnly && (!plan.dailyNote || plan.dailyNote.trim().length === 0)) {
+      return false;
+    }
+
     // Subject filter
     if (subjectFilter === 'math2' && !plan.math2Task) return false;
     if (subjectFilter === 'cs' && !plan.csTask) return false;
@@ -174,6 +213,20 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               已攻克
             </button>
           </div>
+
+          {/* Notes Only Filter Toggle */}
+          <button
+            onClick={() => setFilterNotesOnly((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+              filterNotesOnly
+                ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-xs'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+            }`}
+            title="筛选出记录过复盘笔记与未完成留存的日期"
+          >
+            <StickyNote className="h-3.5 w-3.5 text-amber-400" />
+            <span>仅看有笔记 ({notesCount})</span>
+          </button>
         </div>
       </div>
 
@@ -185,6 +238,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           const mathCompleted = plan.math2Task?.isCompleted;
           const csCompleted = plan.csTask?.isCompleted;
           const allCompleted = (!plan.math2Task || mathCompleted) && (!plan.csTask || csCompleted);
+          const hasNote = Boolean(plan.dailyNote && plan.dailyNote.trim().length > 0);
 
           return (
             <div
@@ -211,7 +265,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     <span className="text-[10px] text-slate-400">{plan.weekday}</span>
                   </div>
 
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-bold text-white">
                         {plan.theme}
@@ -242,10 +296,35 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         </>
                       )}
                     </div>
+
+                    {/* Unexpanded Note Banner Indicator: Visible even when card is not expanded! */}
+                    {hasNote && (
+                      <div
+                        onClick={(e) => handleOpenNoteModal(plan, e)}
+                        className="mt-2 flex items-start gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-1.5 text-xs text-amber-200/95 hover:bg-amber-500/20 hover:border-amber-500/50 transition-all cursor-pointer group max-w-xl"
+                        title="点击查看或编辑此日复盘与未完成留存备忘"
+                      >
+                        <span className="text-amber-400 font-bold shrink-0 flex items-center gap-1">
+                          <StickyNote className="h-3.5 w-3.5 text-amber-400" />
+                          <span>[复盘留存]:</span>
+                        </span>
+                        <span className="truncate flex-1 text-slate-200 group-hover:text-amber-100 font-normal">
+                          {plan.dailyNote}
+                        </span>
+                        {plan.dailyNoteUpdatedAt && (
+                          <span className="text-[10px] text-amber-400/60 font-mono shrink-0 hidden md:inline">
+                            {plan.dailyNoteUpdatedAt}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-amber-400 group-hover:text-amber-300 underline underline-offset-2 shrink-0 font-medium ml-1">
+                          编辑
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-center shrink-0">
                   {/* Task Quick Indicators */}
                   <div className="flex items-center gap-2">
                     {plan.math2Task && (
@@ -272,12 +351,40 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     )}
                   </div>
 
+                  {/* Daily Note Action Button: Visibly indicates note presence in unexpanded/expanded views */}
+                  <button
+                    onClick={(e) => handleOpenNoteModal(plan, e)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                      hasNote
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 shadow-amber-950/40'
+                        : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    }`}
+                    title={
+                      hasNote
+                        ? '此日已记录复盘备忘，点击查看或编辑'
+                        : '点击记录今日未完成代办、易错点或明日补救计划'
+                    }
+                  >
+                    {hasNote ? (
+                      <>
+                        <BookmarkCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        <span>已记笔记</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileEdit className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <span>记笔记</span>
+                      </>
+                    )}
+                  </button>
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleExpand(plan.date);
                     }}
                     className="p-1 text-slate-400 hover:text-slate-200"
+                    title={isExpanded ? '折叠详情' : '展开详情'}
                   >
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4" />
@@ -453,6 +560,59 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       <p className="text-slate-400 pl-5 leading-relaxed">{plan.politicsTask.action}</p>
                     </div>
                   </div>
+
+                  {/* Daily Reflection & Incomplete Task Notes in Expanded Card */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <StickyNote className="h-4 w-4 text-amber-400" />
+                        <h4 className="font-bold text-white text-xs">
+                          战地每日复盘与未完成留存记录 ({plan.formattedDate})
+                        </h4>
+                        {hasNote && (
+                          <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-700/50 px-2 py-0.5 rounded-full font-semibold">
+                            ✓ 已记笔记
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {plan.dailyNoteUpdatedAt && (
+                          <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
+                            更新于: {plan.dailyNoteUpdatedAt}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => handleOpenNoteModal(plan)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-medium transition-all cursor-pointer"
+                        >
+                          <FileEdit className="h-3.5 w-3.5" />
+                          <span>{hasNote ? '修改笔记' : '添加笔记'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {hasNote ? (
+                      <div
+                        onClick={() => handleOpenNoteModal(plan)}
+                        className="rounded-lg bg-slate-950/70 border border-amber-500/30 p-3 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed cursor-pointer hover:border-amber-500/50 transition-colors border-l-4 border-l-amber-500"
+                        title="点击快速编辑笔记"
+                      >
+                        {plan.dailyNote}
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => handleOpenNoteModal(plan)}
+                        className="rounded-lg bg-slate-950/40 border border-dashed border-slate-800 p-3 text-xs text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:border-slate-700 hover:text-slate-300 transition-colors"
+                      >
+                        <span>
+                          💡 今日任务未全部完成？或者有易错点、公式没吃透、明日需补卡的任务？点击随时记下一笔...
+                        </span>
+                        <span className="text-amber-400 font-semibold shrink-0 flex items-center gap-1">
+                          + 立即记录
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -498,6 +658,127 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           </div>
         </div>
       </section>
+
+      {/* 4. Note Editor Modal */}
+      {editingPlan && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setEditingPlan(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                  <StickyNote className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <span>{editingPlan.formattedDate} ({editingPlan.weekday}) · 复盘与未完成备忘</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    今日任务未达标？概念未吃透？在此记录原因及明日优先补卡代办
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingPlan(null)}
+                className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                title="关闭"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Quick Tag Templates */}
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400 mb-1.5 flex items-center gap-1">
+                <span>⚡ 快捷插入常见复盘标签：</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  '⚠️ 今日有未完成任务，明日优先补救',
+                  '💡 核心概念/错题未吃透，需二次回炉',
+                  '⏰ 某科耗时超限，需调整时间分配',
+                  '🎯 大题解题卡壳，需找题型加练',
+                  '✅ 状态良好，四科全部按既定节奏攻克',
+                ].map((tag, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setNoteInput((prev) => {
+                        const prefix = prev.trim() ? prev.trim() + '\n' : '';
+                        return prefix + tag;
+                      });
+                    }}
+                    className="px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-300 hover:text-amber-300 transition-colors cursor-pointer text-left"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Note Textarea */}
+            <div>
+              <textarea
+                autoFocus
+                rows={5}
+                value={noteInput}
+                onChange={(e) => setNoteInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    handleSaveNote();
+                  }
+                }}
+                placeholder={`记录今天任务的真实完成情况、未做完的原因、遗留的重难点，或明日需要优先补救的代办...\n（支持按 Ctrl + Enter 快捷保存）`}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950/90 p-3 text-xs sm:text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-400 focus:ring-1 focus:ring-amber-400/50 focus:outline-none transition-all leading-relaxed"
+              />
+              <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1">
+                <span>提示：支持按 Ctrl + Enter 快捷保存</span>
+                <span>{noteInput.length} 字</span>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <div>
+                {editingPlan.dailyNote && (
+                  <button
+                    type="button"
+                    onClick={handleClearNote}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-900/40 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>清空笔记</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingPlan(null)}
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md cursor-pointer"
+                >
+                  <BookmarkCheck className="h-4 w-4" />
+                  <span>保存笔记</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
