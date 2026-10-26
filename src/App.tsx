@@ -16,8 +16,8 @@ import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 
 import { triggerTaskCelebration, triggerDayCompletionCelebration, soundManager } from './utils/celebration';
 import { getChinaDateInfo, getChinaTodayPlanDate, getChinaCalendarDiffDays } from './utils/chinaDate';
 
-const STORAGE_KEY = 'kaoyan_battle_station_plans_v4';
-const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
+const STORAGE_KEY = 'kaoyan_battle_station_plans_v5';
+const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v4', 'kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
 
 /**
  * Computes today's date in China Standard Time (东八区, Asia/Shanghai, UTC+8)
@@ -331,8 +331,8 @@ export default function App() {
   const [showStorageInfo, setShowStorageInfo] = useState(false);
 
   // Countdown calculations anchored precisely to China Standard Time (东八区, UTC+8)
-  const daysToExam = getChinaCalendarDiffDays('2026-12-26');
-  const daysToMathPastPapers = getChinaCalendarDiffDays('2026-10-23');
+  const daysToExam = getChinaCalendarDiffDays('2026-12-19');
+  const daysToMathPastPapers = getChinaCalendarDiffDays('2026-10-27');
   const daysToCsPastPapers = getChinaCalendarDiffDays('2026-11-11');
   const daysToXiao8 = getChinaCalendarDiffDays('2026-11-10');
 

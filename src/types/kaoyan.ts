@@ -1,4 +1,4 @@
-export type SubjectType = 'math2' | 'co' | 'os' | 'cn' | 'ds' | 'english' | 'politics';
+export type SubjectType = 'math2' | 'co' | 'os' | 'cn' | 'ds' | 'cs' | 'english' | 'politics';
 
 export interface DailyTaskItem {
   id: string;

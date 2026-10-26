@@ -92,8 +92,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               {currentDayPlan.theme}
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              核心方针：<span className="text-amber-300 font-medium">战力爆发，科学突击，死守 10.23 数二真题与 11.11 全真套卷</span>。
-              数二线代紧扣张宇知识树7天精准突击，10.20完成全部章节强化，10.21一张网大串联；408稳扎稳打全速推进！
+              核心方针：<span className="text-amber-300 font-medium">战力爆发，科学突击，死守 10.27 数二真题与 11.11 408全真套卷</span>。
+              数二 53 天真题与全真模考闭环决战已全面打响，408稳扎稳打全速推进，直通 12.19-12.20 考研大决战！
             </p>
           </div>
 

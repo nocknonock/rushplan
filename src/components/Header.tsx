@@ -139,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="hidden lg:flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 text-xs">
-            <span className="text-slate-400">10.23 数二真题:</span>
+            <span className="text-slate-400">10.27 数二真题:</span>
             <span className="font-mono font-bold tabular-nums text-amber-400">
               {daysToMathPastPapers > 0 ? `${daysToMathPastPapers}天` : '已开战'}
             </span>
