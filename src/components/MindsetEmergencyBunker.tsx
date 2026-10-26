@@ -82,7 +82,7 @@ export const MindsetEmergencyBunker: React.FC = () => {
         <div className="flex items-center gap-2">
           <HeartHandshake className="h-5 w-5 text-rose-400" />
           <h1 className="text-lg sm:text-xl font-bold text-white font-['Plus_Jakarta_Sans',sans-serif]">
-            战时心态急救舱 (Mental Resilience Bunker)
+            心理急救箱 (Mental Resilience Bunker)
           </h1>
         </div>
         <p className="text-xs text-rose-300/80 mt-1">

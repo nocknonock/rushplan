@@ -186,7 +186,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-400 mr-1 flex items-center gap-1.5">
               <Layers className="h-4 w-4 text-amber-400" />
-              <span>专项推进表切换:</span>
+              <span>专项日程表切换:</span>
             </span>
             <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
               <button
@@ -198,7 +198,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 }`}
               >
                 <GraduationCap className="h-4 w-4" />
-                <span>📐 数学二专属推进表</span>
+                <span>📐 数学二专属日程表</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${viewTrack === 'math' ? 'bg-slate-950/30 text-slate-900' : 'bg-slate-800 text-amber-400'}`}>
                   53天真题
                 </span>
@@ -213,7 +213,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 }`}
               >
                 <Cpu className="h-4 w-4" />
-                <span>💻 408专业课专属推进表</span>
+                <span>💻 408专业课专属日程表</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${viewTrack === 'cs' ? 'bg-slate-950/30 text-slate-900' : 'bg-slate-800 text-cyan-400'}`}>
                   74天全景
                 </span>
@@ -228,7 +228,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 }`}
               >
                 <Target className="h-4 w-4" />
-                <span>⚔️ 全科双轨统筹推进表</span>
+                <span>⚔️ 全科双轨统筹日程表</span>
               </button>
             </div>
           </div>

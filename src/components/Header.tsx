@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <span className="text-base font-bold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
-                考研决战指挥部
+                考研日程规划
               </span>
               <p className="text-[11px] text-slate-400 font-medium hidden sm:block">
                 数二 · 408 · 英语 · 政治
@@ -163,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Sparkles className="h-3.5 w-3.5" />
-              <span>作战总览</span>
+              <span>总览</span>
             </button>
 
             <button
@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Calendar className="h-3.5 w-3.5" />
-              <span>天级推进表</span>
+              <span>日程表</span>
             </button>
 
             <button
@@ -187,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Clock className="h-3.5 w-3.5" />
-              <span>24H工作台</span>
+              <span>番茄钟</span>
             </button>
 
             <button
@@ -199,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <HeartHandshake className="h-3.5 w-3.5" />
-              <span>心态急救</span>
+              <span>心理急救箱</span>
             </button>
           </nav>
         </div>
@@ -270,12 +270,13 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative" ref={settingsRef}>
             <button
               onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-              className={`flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+              className={`p-2 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
                 isSettingsOpen
                   ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 shadow-lg shadow-amber-950/40'
                   : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
               }`}
-              title="系统设置（音效与桌面到达通知）"
+              title="系统偏好设置（音效与桌面到达通知）"
+              aria-label="系统偏好设置"
               aria-expanded={isSettingsOpen}
               aria-haspopup="true"
             >
@@ -284,7 +285,6 @@ export const Header: React.FC<HeaderProps> = ({
                   isSettingsOpen ? 'rotate-90 text-amber-400' : 'text-slate-300 group-hover:text-white'
                 }`}
               />
-              <span className="hidden sm:inline font-semibold">设置</span>
             </button>
 
             {/* Settings Dropdown Popover */}

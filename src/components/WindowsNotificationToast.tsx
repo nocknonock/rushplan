@@ -44,7 +44,7 @@ export const WindowsNotificationToast: React.FC<WindowsNotificationToastProps> =
             <Bell className="h-3.5 w-3.5 animate-bounce" />
           </div>
           <span className="text-xs font-bold text-slate-200 font-['Plus_Jakarta_Sans',sans-serif]">
-            考研决战指挥部 · 节点到达提醒
+            考研日程规划 · 节点到达提醒
           </span>
         </div>
         <div className="flex items-center gap-2">

@@ -355,7 +355,7 @@ export const DailyWorkstation: React.FC = () => {
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-amber-400" />
             <h1 className="text-lg sm:text-xl font-bold text-white font-['Plus_Jakarta_Sans',sans-serif]">
-              24H 战时作战工作台 (Daily 24H Mission Flow)
+              番茄钟 · 沉浸专注 (Pomodoro & Focus Timer)
             </h1>
           </div>
           <p className="text-xs text-slate-400 mt-1">

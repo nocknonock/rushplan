@@ -415,7 +415,7 @@ export default function App() {
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-xs text-slate-400">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-400 flex-wrap">
-            <span>考研决战指挥部</span>
+            <span>考研日程规划</span>
             <span aria-hidden="true">·</span>
             <span>数二 53天真题与模考决战</span>
             <span aria-hidden="true">·</span>

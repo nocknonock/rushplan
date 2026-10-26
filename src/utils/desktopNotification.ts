@@ -157,7 +157,7 @@ class DesktopNotificationManager {
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
         const notif = new Notification(node.title, {
-          body: `${node.actionSummary}\n【考研决战指挥部 · 战时冲刺】`,
+          body: `${node.actionSummary}\n【考研日程规划】`,
           tag: `kaoyan-node-${node.timeStr}`,
           icon: '/favicon.ico',
           silent: true, // we already played Web Audio chime

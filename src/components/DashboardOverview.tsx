@@ -291,7 +291,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               onClick={() => onNavigateToTab('timeline')}
               className="flex items-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 text-xs font-semibold text-white transition-colors cursor-pointer"
             >
-              <span>天级推进表</span>
+              <span>日程表</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -608,7 +608,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             onClick={() => onNavigateToTab('workstation')}
             className="text-amber-400 hover:text-amber-300 font-medium underline underline-offset-2 flex items-center gap-1"
           >
-            <span>进入 24H 沉浸番茄工作台</span>
+            <span>进入番茄钟</span>
             <ArrowRight className="h-3 w-3" />
           </button>
         </div>
@@ -928,7 +928,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
           <div className="flex items-center justify-between text-xs">
             <span className="text-slate-500 text-[11px]">
-              {noteContent.length > 0 ? `已输入 ${noteContent.length} 字` : '未完成任务写在这里，天级推进表会醒目标记'}
+              {noteContent.length > 0 ? `已输入 ${noteContent.length} 字` : '未完成任务写在这里，日程表会醒目标记'}
             </span>
             <button
               onClick={handleSaveNote}
@@ -968,7 +968,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               onClick={() => onNavigateToTab('mindset')}
               className="text-xs font-semibold text-rose-400 hover:text-rose-300 underline underline-offset-2 cursor-pointer"
             >
-              进入心态急救舱 →
+              进入心理急救箱 →
             </button>
           </div>
         </div>
