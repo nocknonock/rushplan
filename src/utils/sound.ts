@@ -211,6 +211,13 @@ class SoundEffectManager {
   }
 
   /**
+   * Play alert chime for schedule time nodes
+   */
+  public playChime() {
+    this.playVictoryChime();
+  }
+
+  /**
    * Randomly trigger one of the celebration sound effects:
    * - 鼓掌 (Applause)
    * - 欢呼+掌声 (Cheering)

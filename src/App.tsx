@@ -6,15 +6,16 @@
 import React, { useState, useEffect } from 'react';
 import { DayPlan } from './types/kaoyan';
 import { INITIAL_DAY_PLANS } from './data/scheduleData';
-import { Header } from './components/Header';
+import { Header, ActiveTabType } from './components/Header';
 import { DashboardOverview } from './components/DashboardOverview';
 import { DailyTimeline } from './components/DailyTimeline';
-import { SubjectArmory } from './components/SubjectArmory';
 import { DailyWorkstation } from './components/DailyWorkstation';
 import { MindsetEmergencyBunker } from './components/MindsetEmergencyBunker';
+import { WindowsNotificationToast } from './components/WindowsNotificationToast';
 import { ShieldCheck, RotateCcw, Download, Upload, Sparkles, Check, Info } from 'lucide-react';
 import { triggerTaskCelebration, triggerDayCompletionCelebration, soundManager } from './utils/celebration';
 import { getChinaDateInfo, getChinaTodayPlanDate, getChinaCalendarDiffDays } from './utils/chinaDate';
+import { desktopNotificationManager } from './utils/desktopNotification';
 
 const STORAGE_KEY = 'kaoyan_battle_station_plans_v5';
 const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v4', 'kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
@@ -84,7 +85,7 @@ function mergeSavedWithInitial(savedList: DayPlan[], initialList: DayPlan[]): Da
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'timeline' | 'armory' | 'workstation' | 'mindset'>('dashboard');
+  const [activeTab, setActiveTab] = useState<ActiveTabType>('dashboard');
   const [plans, setPlans] = useState<DayPlan[]>(() => {
     try {
       let saved = localStorage.getItem(STORAGE_KEY);
@@ -130,6 +131,15 @@ export default function App() {
       // storage error
     }
   }, [plans]);
+
+  // Periodic check for schedule nodes arrival to trigger Windows desktop notification
+  useEffect(() => {
+    desktopNotificationManager.checkAndTriggerSchedule();
+    const interval = setInterval(() => {
+      desktopNotificationManager.checkAndTriggerSchedule();
+    }, 15000); // checks every 15s
+    return () => clearInterval(interval);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -396,8 +406,6 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'armory' && <SubjectArmory />}
-
         {activeTab === 'workstation' && <DailyWorkstation />}
 
         {activeTab === 'mindset' && <MindsetEmergencyBunker />}
@@ -407,11 +415,11 @@ export default function App() {
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-xs text-slate-400">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-slate-400 flex-wrap">
-            <span>考研决战指挥部 · 战时极限冲刺系统</span>
+            <span>考研决战指挥部</span>
             <span aria-hidden="true">·</span>
-            <span>数二 15天极限压缩</span>
+            <span>数二 53天真题与模考决战</span>
             <span aria-hidden="true">·</span>
-            <span>408 计组/OS/计网/DS</span>
+            <span>408 74天全景特种兵</span>
             <span aria-hidden="true">·</span>
             <button
               onClick={() => setShowStorageInfo(true)}
@@ -516,6 +524,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Windows 11/10 Bottom-Right Native / Fallback Notification Toast */}
+      <WindowsNotificationToast onNavigateToTab={setActiveTab} />
     </div>
   );
 }
