@@ -23,9 +23,7 @@ import {
   Table,
   CheckSquare,
   Zap,
-  Bell,
 } from 'lucide-react';
-import { desktopNotificationManager } from '../utils/desktopNotification';
 
 interface DashboardOverviewProps {
   currentDayPlan: DayPlan;
@@ -171,21 +169,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const [noteContent, setNoteContent] = useState(currentDayPlan.dailyNote || currentDayPlan.math2Task?.notes || '');
   const [isNoteSaved, setIsNoteSaved] = useState(false);
   const [scheduleViewMode, setScheduleViewMode] = useState<'table' | 'cards'>('table');
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>(() => {
-    return desktopNotificationManager.getPermissionStatus();
-  });
-  const [testSentToast, setTestSentToast] = useState(false);
-
-  const handleEnableNotification = async () => {
-    const perm = await desktopNotificationManager.requestPermission();
-    setNotifPermission(perm);
-  };
-
-  const handleTestNotification = () => {
-    desktopNotificationManager.sendTestNotification();
-    setTestSentToast(true);
-    setTimeout(() => setTestSentToast(false), 3000);
-  };
 
   const chinaNow = getChinaDateInfo();
   const currentMinutes = chinaNow.hour * 60 + chinaNow.minute;
@@ -505,66 +488,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
 
-        {/* Windows Desktop Notification Status & Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-950/80 border border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg shrink-0 ${
-              notifPermission === 'granted'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-            }`}>
-              <Bell className="h-4 w-4" />
-            </div>
-            <div className="text-xs">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-white">Windows 桌面到达通知（右下角弹窗）</span>
-                {notifPermission === 'granted' ? (
-                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.2 rounded-full font-semibold">
-                    ✓ 系统已授权
-                  </span>
-                ) : notifPermission === 'denied' ? (
-                  <span className="text-[10px] font-mono text-rose-400 bg-rose-950/60 border border-rose-800/60 px-2 py-0.2 rounded-full font-semibold">
-                    ✗ 浏览器已拦截
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-mono text-amber-300 bg-amber-950/60 border border-amber-800/60 px-2 py-0.2 rounded-full font-semibold">
-                    待开启
-                  </span>
-                )}
-              </div>
-              <p className="text-slate-400 mt-0.5 text-[11px] leading-relaxed">
-                {notifPermission === 'granted'
-                  ? '节点到达时（如 08:30 数学模考、13:30 408主力等），Windows 将在桌面右下角自动弹出 Toast 提醒并伴有提示音。'
-                  : notifPermission === 'denied'
-                  ? '通知已被当前浏览器屏蔽，请在浏览器地址栏左侧“网站设置”中允许通知。'
-                  : '开启后，即使你在后台刷真题或翻讲义，时间节点一到 Windows 右下角也会准时弹窗提醒！'}
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-            {notifPermission !== 'granted' && (
-              <button
-                type="button"
-                onClick={handleEnableNotification}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md cursor-pointer"
-              >
-                <Bell className="h-3.5 w-3.5" />
-                <span>开启 Windows 弹窗权限</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={handleTestNotification}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 text-xs font-semibold transition-all cursor-pointer"
-              title="立即发送测试弹窗，检验右下角弹窗效果"
-            >
-              <Zap className="h-3.5 w-3.5 text-amber-400" />
-              <span>{testSentToast ? '已触发测试弹窗！' : '测试右下角弹窗'}</span>
-            </button>
-          </div>
-        </div>
 
         {/* View Mode 1: Verbatim Markdown Table View */}
         {scheduleViewMode === 'table' ? (
