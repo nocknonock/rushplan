@@ -216,84 +216,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. Tactical Command Banner */}
-      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-6 shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="space-y-2 max-w-2xl">
-            <div className="flex items-center gap-2 text-xs font-semibold text-amber-400">
-              <Flame className="h-4 w-4" />
-              <span>当前战略指令 · 战时冲刺指挥部</span>
-              <span className="text-slate-600">·</span>
-              <span className="text-slate-300 font-mono">
-                {currentDayPlan.formattedDate} ({currentDayPlan.weekday})
-              </span>
-              {currentDayPlan.date === todayDateStr && (
-                <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.2 rounded-full font-bold">
-                  ★ 东八区今日实战
-                </span>
-              )}
-            </div>
+      {/* 1. Master Calligraphy Header Banner */}
+      <section className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-r from-stone-950 via-slate-950 to-stone-950 py-8 sm:py-12 md:py-14 lg:py-16 px-4 sm:px-8 shadow-2xl flex flex-col items-center justify-center text-center select-none group">
+        {/* Subtle ambient golden radial ink glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.16),transparent_70%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20 pointer-events-none" />
 
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-['Plus_Jakarta_Sans',sans-serif]">
-              {currentDayPlan.theme}
-            </h1>
+        <div className="relative z-10 flex flex-col items-center justify-center space-y-3 max-w-full">
+          {/* Cursive / Brush Calligraphy (草书毛笔字) - Kept in single elegant line */}
+          <h1 className="whitespace-nowrap text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-[4.25rem] font-normal tracking-[0.08em] sm:tracking-[0.14em] md:tracking-[0.18em] text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-200 to-amber-400 drop-shadow-[0_4px_24px_rgba(245,158,11,0.32)] font-['Liu_Jian_Mao_Cao','Zhi_Mang_Xing','Ma_Shan_Zheng','STKaiti','KaiTi',cursive,serif] leading-tight transition-transform duration-500 group-hover:scale-[1.01] px-2">
+            他山之石，可以攻玉
+          </h1>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              核心方针：<span className="text-amber-300 font-medium">战力爆发，科学突击，死守 10.27 数二真题与 11.11 408全真套卷</span>。
-              数二 53 天真题与全真模考闭环决战已全面打响，408稳扎稳打全速推进，直通 12.19-12.20 考研大决战！
-            </p>
-
-            {/* Quick Track Shortcuts */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-xs text-slate-400 font-medium">专属推进表直达：</span>
-              <button
-                onClick={() => onNavigateToTab('timeline')}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs font-semibold text-amber-300 transition-colors cursor-pointer"
-              >
-                <GraduationCap className="h-3.5 w-3.5" />
-                <span>📐 数学二专属表 (53天真题)</span>
-              </button>
-              <button
-                onClick={() => onNavigateToTab('timeline')}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-semibold text-cyan-300 transition-colors cursor-pointer"
-              >
-                <Cpu className="h-3.5 w-3.5" />
-                <span>💻 408专业课专属表 (74天全景)</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 shrink-0 self-start md:self-auto">
-            {todayDateStr && currentDayPlan.date !== todayDateStr && (
-              <button
-                onClick={onJumpToToday}
-                className="flex items-center gap-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-3 py-2 text-xs font-semibold text-amber-300 transition-all shadow-xs cursor-pointer"
-                title="一键切回今天真实代办"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span>回到今日</span>
-              </button>
-            )}
-
-            <select
-              value={currentDayPlan.date}
-              onChange={(e) => onSelectDay(e.target.value)}
-              className="rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-2 text-xs font-medium text-slate-200 focus:border-amber-400 focus:outline-none cursor-pointer"
-            >
-              {allPlans.map((plan) => (
-                <option key={plan.date} value={plan.date}>
-                  {plan.formattedDate} ({plan.weekday}) {plan.date === todayDateStr ? '★ 今日' : ''} - {plan.theme.slice(0, 16)}...
-                </option>
-              ))}
-            </select>
-
-            <button
-              onClick={() => onNavigateToTab('timeline')}
-              className="flex items-center gap-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 text-xs font-semibold text-white transition-colors cursor-pointer"
-            >
-              <span>日程表</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+          <div className="flex items-center gap-2 pt-1 text-xs sm:text-sm text-amber-300/60 font-['STKaiti','KaiTi',serif] tracking-widest">
+            <span className="inline-block w-8 sm:w-12 h-[1px] bg-gradient-to-r from-transparent to-amber-500/50" />
+            <span>《诗经·小雅·鹤鸣》</span>
+            <span className="inline-block w-8 sm:w-12 h-[1px] bg-gradient-to-l from-transparent to-amber-500/50" />
           </div>
         </div>
       </section>
