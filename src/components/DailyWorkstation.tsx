@@ -185,7 +185,7 @@ export const DailyWorkstation: React.FC = () => {
   // Overall Progress Percentage
   const overallPercent =
     totalDurationSeconds > 0
-      ? Math.min(100, Math.round((elapsedSeconds / totalDurationSeconds) * 100))
+      ? Math.min(100, (elapsedSeconds / totalDurationSeconds) * 100)
       : 0;
 
   // Math 2 Mock Stage Calculations:
@@ -193,16 +193,17 @@ export const DailyWorkstation: React.FC = () => {
   const MCQ_TOTAL_SECONDS = 40 * 60; // 2400s
   const mcqElapsedSeconds = Math.min(elapsedSeconds, MCQ_TOTAL_SECONDS);
   const mcqRemainingSeconds = Math.max(0, MCQ_TOTAL_SECONDS - elapsedSeconds);
-  const mcqPercent = Math.min(100, Math.round((mcqElapsedSeconds / MCQ_TOTAL_SECONDS) * 100));
+  const mcqPercent = Math.min(100, (mcqElapsedSeconds / MCQ_TOTAL_SECONDS) * 100);
   const isMcqDone = elapsedSeconds >= MCQ_TOTAL_SECONDS;
   const isMcqActive = isRunning && elapsedSeconds < MCQ_TOTAL_SECONDS;
 
   // Stage 2: 填空题 (40m - 70m = 2400s to 4200s, total 30m = 1800s)
+  // 严格串行保证：在前 40 分钟（选择题阶段），fillPercent 严格锁定为 0%
   const FILL_TOTAL_SECONDS = 30 * 60; // 1800s
-  const fillStartSeconds = MCQ_TOTAL_SECONDS; // 2400s
-  const fillEndSeconds = fillStartSeconds + FILL_TOTAL_SECONDS; // 4200s (70m)
+  const fillStartSeconds = MCQ_TOTAL_SECONDS; // 2400s (第 40 分钟整)
+  const fillEndSeconds = fillStartSeconds + FILL_TOTAL_SECONDS; // 4200s (第 70 分钟整)
   const fillElapsedSeconds =
-    elapsedSeconds < fillStartSeconds
+    elapsedSeconds <= fillStartSeconds
       ? 0
       : Math.min(FILL_TOTAL_SECONDS, elapsedSeconds - fillStartSeconds);
   const fillRemainingSeconds =
@@ -210,7 +211,9 @@ export const DailyWorkstation: React.FC = () => {
       ? FILL_TOTAL_SECONDS
       : Math.max(0, fillEndSeconds - elapsedSeconds);
   const fillPercent =
-    Math.min(100, Math.round((fillElapsedSeconds / FILL_TOTAL_SECONDS) * 100));
+    elapsedSeconds <= fillStartSeconds
+      ? 0
+      : Math.min(100, (fillElapsedSeconds / FILL_TOTAL_SECONDS) * 100);
   const isFillActive = isRunning && elapsedSeconds >= fillStartSeconds && elapsedSeconds < fillEndSeconds;
   const isFillDone = elapsedSeconds >= fillEndSeconds;
   const isFillPending = elapsedSeconds < fillStartSeconds;
@@ -894,11 +897,16 @@ export const DailyWorkstation: React.FC = () => {
             {/* The One and Only Text Element: Giant Countdown (Click to Toggle Play/Pause) */}
             <div
               onClick={handleStartPause}
-              className={`cursor-pointer group flex flex-col items-center justify-center transition-all duration-200 active:scale-95 ${
-                isRunning ? 'opacity-100' : 'opacity-70'
-              }`}
+              className="cursor-pointer group flex flex-col items-center justify-center transition-all duration-300 active:scale-95"
+              title={isRunning ? '点击暂停计时' : '点击继续计时'}
             >
-              <div className="font-mono text-7xl sm:text-9xl md:text-[12rem] lg:text-[15rem] font-black tracking-tight text-white tabular-nums drop-shadow-[0_0_40px_rgba(255,255,255,0.18)] leading-none">
+              <div
+                className={`font-mono text-7xl sm:text-9xl md:text-[12rem] lg:text-[15rem] font-black tracking-tight tabular-nums leading-none transition-colors duration-300 ${
+                  isRunning
+                    ? 'text-white drop-shadow-[0_0_40px_rgba(255,255,255,0.18)]'
+                    : 'text-blue-400 drop-shadow-[0_0_50px_rgba(96,165,250,0.55)]'
+                }`}
+              >
                 {formatTime(timeLeftSeconds)}
               </div>
             </div>
