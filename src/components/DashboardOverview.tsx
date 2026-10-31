@@ -933,7 +933,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 : 'border-slate-800 bg-slate-900/60'
             }`}
           >
-            <div className="flex items-start justify-between gap-3 mb-2">
+            <div className="flex items-start justify-between gap-3 mb-3">
               <button
                 onClick={() => onTogglePoliticsComplete?.(currentDayPlan.date)}
                 className="flex items-center gap-2 text-left group cursor-pointer"
@@ -941,14 +941,21 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 {currentDayPlan.politicsTask.isCompleted ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
                 ) : (
-                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-indigo-400 shrink-0" />
+                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-rose-400 shrink-0" />
                 )}
                 <div>
-                  <span className="text-xs font-mono font-medium text-indigo-400">
-                    [考研政治] 早读08:00与夜间23:20背诵
-                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-mono font-medium text-rose-400">
+                      [考研政治] {currentDayPlan.politicsDetail?.phaseTitle ? `· ${currentDayPlan.politicsDetail.phaseTitle}` : ''}
+                    </span>
+                    {currentDayPlan.politicsDetail?.dayTypeLabel && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 font-semibold">
+                        {currentDayPlan.politicsDetail.dayTypeLabel}
+                      </span>
+                    )}
+                  </div>
                   <h3
-                    className={`text-sm font-semibold text-white ${
+                    className={`text-sm font-semibold text-white mt-0.5 ${
                       currentDayPlan.politicsTask.isCompleted ? 'line-through text-slate-400' : ''
                     }`}
                   >
@@ -957,14 +964,44 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </div>
               </button>
               <span className="text-[11px] font-mono text-slate-400 shrink-0">
-                {currentDayPlan.politicsTask.durationMinutes} 分钟
+                {currentDayPlan.politicsDetail?.durationRange || `${currentDayPlan.politicsTask.durationMinutes} 分钟`}
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-2.5 rounded-lg border border-slate-800/60">
-              {currentDayPlan.politicsTask.action}
-            </p>
-            <div className="mt-2 text-[11px] text-slate-500">
-              纪律：碎片时间刷模拟卷选择题，睡前23:20背诵政治主观题逻辑框架！
+
+            <div className="space-y-2 text-xs text-slate-300">
+              {/* Daily Target Goal */}
+              <div className="rounded-lg bg-slate-950/60 p-2.5 border border-slate-800/80">
+                <span className="text-amber-400 font-medium">🎯 今日任务目标：</span>
+                <p className="text-slate-300 mt-0.5 font-normal leading-relaxed">
+                  {currentDayPlan.politicsDetail?.goal || currentDayPlan.politicsTask.action}
+                </p>
+              </div>
+
+              {/* Concrete Steps Execution Breakdown */}
+              {currentDayPlan.politicsDetail?.steps && currentDayPlan.politicsDetail.steps.length > 0 && (
+                <div className="space-y-1.5">
+                  <span className="text-[11px] text-slate-400 font-medium">执行节奏拆解：</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {currentDayPlan.politicsDetail.steps.map((st, i) => (
+                      <div key={i} className="rounded bg-slate-950/50 p-2 border border-slate-800/70 text-[11px] space-y-0.5">
+                        <div className="flex items-center justify-between text-rose-300 font-semibold">
+                          <span>{st.title}</span>
+                          <span className="text-amber-400 font-mono text-[10px]">{st.duration}</span>
+                        </div>
+                        <p className="text-slate-400 text-[10px] leading-relaxed line-clamp-2">{st.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Key Directives */}
+              {currentDayPlan.politicsDetail?.keyDirectives && currentDayPlan.politicsDetail.keyDirectives.length > 0 && (
+                <div className="text-[11px] text-rose-300/90 bg-rose-950/20 p-2 rounded border border-rose-900/30">
+                  <span className="text-rose-400 font-semibold">执行纪律：</span>
+                  {currentDayPlan.politicsDetail.keyDirectives.join('；')}
+                </div>
+              )}
             </div>
           </div>
         </div>

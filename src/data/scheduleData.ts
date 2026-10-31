@@ -4766,7 +4766,7 @@ export const INITIAL_DAY_PLANS: DayPlan[] = RAW_DAY_PLANS.map((plan) => {
   // Format high-visibility tripartite theme (数二 · 408 · 政治)
   const mathBrief = plan.math2Task?.title.split('（')[0] || '数二模考';
   const csBrief = plan.csTask?.title.split('（')[0] || '408实战';
-  const polBrief = `政治【${politicsDetail.phaseTitle}】${politicsDetail.dayTypeLabel}`;
+  const polBrief = politicsDetail.title;
   const tripartiteTheme = `${mathBrief} · ${csBrief} · ${polBrief}`;
 
   return {
