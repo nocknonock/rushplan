@@ -17,8 +17,8 @@ import { triggerTaskCelebration, triggerDayCompletionCelebration, soundManager }
 import { getChinaDateInfo, getChinaTodayPlanDate, getChinaCalendarDiffDays } from './utils/chinaDate';
 import { desktopNotificationManager } from './utils/desktopNotification';
 
-const STORAGE_KEY = 'kaoyan_battle_station_plans_v5';
-const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v4', 'kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
+const STORAGE_KEY = 'kaoyan_battle_station_plans_v8';
+const LEGACY_STORAGE_KEYS = ['kaoyan_battle_station_plans_v7', 'kaoyan_battle_station_plans_v6', 'kaoyan_battle_station_plans_v5', 'kaoyan_battle_station_plans_v4', 'kaoyan_battle_station_plans_v3', 'kaoyan_battle_station_plans_v2', 'kaoyan_battle_station_plans_v1'];
 
 /**
  * Computes today's date in China Standard Time (东八区, Asia/Shanghai, UTC+8)
@@ -80,6 +80,7 @@ function mergeSavedWithInitial(savedList: DayPlan[], initialList: DayPlan[]): Da
         ...initPlan.politicsTask,
         isCompleted: datePlan?.politicsTask?.isCompleted ?? false,
       },
+      politicsDetail: initPlan.politicsDetail,
     };
   });
 }

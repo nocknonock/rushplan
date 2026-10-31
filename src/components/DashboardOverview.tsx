@@ -43,6 +43,8 @@ interface DashboardOverviewProps {
   daysToXiao8: number;
 }
 
+import { desktopNotificationManager } from '../utils/desktopNotification';
+
 // User's verbatim daily execution schedule
 interface ScheduleSlot {
   id: string;
@@ -55,9 +57,10 @@ interface ScheduleSlot {
   endMinutes: number;
 }
 
-const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
+// 模考日作息时刻表 (Mock Day)
+export const MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
   {
-    id: 'slot-1',
+    id: 'mock-slot-1',
     timeRange: '08:00 – 08:30',
     subjectTitle: '政治 / 英语早读 0.5h',
     subjectCategory: 'politics',
@@ -67,7 +70,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 8 * 60 + 30,
   },
   {
-    id: 'slot-2',
+    id: 'mock-slot-2',
     timeRange: '08:30 – 11:30',
     subjectTitle: '数学（核心块：3h）',
     subjectCategory: 'math',
@@ -77,7 +80,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 11 * 60 + 30,
   },
   {
-    id: 'slot-3',
+    id: 'mock-slot-3',
     timeRange: '11:30 – 12:30',
     subjectTitle: '即时复盘 + 动态时间',
     subjectCategory: 'math',
@@ -87,7 +90,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 12 * 60 + 30,
   },
   {
-    id: 'slot-4',
+    id: 'mock-slot-4',
     timeRange: '12:30 – 13:30',
     subjectTitle: '英语 1h',
     subjectCategory: 'english',
@@ -97,7 +100,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 13 * 60 + 30,
   },
   {
-    id: 'slot-5',
+    id: 'mock-slot-5',
     timeRange: '13:30 – 17:30',
     subjectTitle: '408（主力块：4h）',
     subjectCategory: 'cs',
@@ -107,7 +110,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 17 * 60 + 30,
   },
   {
-    id: 'slot-6',
+    id: 'mock-slot-6',
     timeRange: '17:30 – 18:30',
     subjectTitle: '晚饭 + 休息放空',
     subjectCategory: 'rest',
@@ -117,7 +120,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 18 * 60 + 30,
   },
   {
-    id: 'slot-7',
+    id: 'mock-slot-7',
     timeRange: '18:30 – 21:30',
     subjectTitle: '408 追赶 3h',
     subjectCategory: 'cs',
@@ -127,7 +130,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 21 * 60 + 30,
   },
   {
-    id: 'slot-8',
+    id: 'mock-slot-8',
     timeRange: '21:30 – 23:30',
     subjectTitle: '数学（复盘块）2h',
     subjectCategory: 'math',
@@ -137,7 +140,7 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     endMinutes: 23 * 60 + 20,
   },
   {
-    id: 'slot-9',
+    id: 'mock-slot-9',
     timeRange: '23:20 – 24:00',
     subjectTitle: '政治背诵',
     subjectCategory: 'politics',
@@ -145,6 +148,120 @@ const USER_SCHEDULE_SLOTS: ScheduleSlot[] = [
     content: '22:20–23:00 / 23:20 政治主观题框架背诵（11月中下旬肖四出来后重点发力狂背）。',
     startMinutes: 23 * 60 + 20,
     endMinutes: 24 * 60,
+  },
+];
+
+// 非模考日作息时刻表 (Non-Mock Day)
+export const NON_MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
+  {
+    id: 'nonmock-slot-1',
+    timeRange: '08:00 – 08:30',
+    subjectTitle: '政治 / 英语早读',
+    subjectCategory: 'politics',
+    badge: '早读唤醒',
+    content: '政治手册回顾 15 分钟 + 英语词汇 15 分钟',
+    startMinutes: 8 * 60,
+    endMinutes: 8 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-2',
+    timeRange: '08:30 – 11:30',
+    subjectTitle: '数学 3h',
+    subjectCategory: 'math',
+    badge: '专项补漏·错题重做',
+    content: '专项训练、错题重做、薄弱知识点补漏',
+    startMinutes: 8 * 60 + 30,
+    endMinutes: 11 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-3',
+    timeRange: '11:30 – 12:00',
+    subjectTitle: '数学复盘',
+    subjectCategory: 'math',
+    badge: '总结沉淀',
+    content: '总结上午错误，回忆关键公式与解题方法',
+    startMinutes: 11 * 60 + 30,
+    endMinutes: 12 * 60,
+  },
+  {
+    id: 'nonmock-slot-4',
+    timeRange: '12:00 – 12:30',
+    subjectTitle: '午餐与休息',
+    subjectCategory: 'rest',
+    badge: '蓄能充能',
+    content: '正常休息',
+    startMinutes: 12 * 60,
+    endMinutes: 12 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-5',
+    timeRange: '12:30 – 13:30',
+    subjectTitle: '英语 1h',
+    subjectCategory: 'english',
+    badge: '手感保持',
+    content: '每日阅读或作文、新题型、翻译训练',
+    startMinutes: 12 * 60 + 30,
+    endMinutes: 13 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-6',
+    timeRange: '13:30 – 17:00',
+    subjectTitle: '408 3.5h',
+    subjectCategory: 'cs',
+    badge: '真题与重点突破',
+    content: '真题、知识点复习、重点章节突破',
+    startMinutes: 13 * 60 + 30,
+    endMinutes: 17 * 60,
+  },
+  {
+    id: 'nonmock-slot-7',
+    timeRange: '17:00 – 17:30',
+    subjectTitle: '政治刷题 30min',
+    subjectCategory: 'politics',
+    badge: '小程序与选择题',
+    content: '小程序 15～20 题，或复盘一组选择题',
+    startMinutes: 17 * 60,
+    endMinutes: 17 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-8',
+    timeRange: '17:30 – 18:30',
+    subjectTitle: '晚饭与休息',
+    subjectCategory: 'rest',
+    badge: '放松身心',
+    content: '放松',
+    startMinutes: 17 * 60 + 30,
+    endMinutes: 18 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-9',
+    timeRange: '18:30 – 20:30',
+    subjectTitle: '408 2h',
+    subjectCategory: 'cs',
+    badge: '主力任务推进',
+    content: '继续 408 主力任务，完成当天计划',
+    startMinutes: 18 * 60 + 30,
+    endMinutes: 20 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-10',
+    timeRange: '20:30 – 22:00',
+    subjectTitle: '数学 1.5h',
+    subjectCategory: 'math',
+    badge: '关键问题·错题回顾',
+    content: '优先处理当天未完成的关键问题；已完成则回顾错题',
+    startMinutes: 20 * 60 + 30,
+    endMinutes: 22 * 60,
+  },
+  {
+    id: 'nonmock-slot-11',
+    timeRange: '22:00 – 23:30',
+    subjectTitle: '政治 1.5h',
+    subjectCategory: 'politics',
+    badge: '阶段复盘与背诵',
+    content: '按阶段完成手册、肖八选择题复盘或肖四背诵',
+    startMinutes: 22 * 60,
+    endMinutes: 23 * 60 + 30,
   },
 ];
 
@@ -169,6 +286,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const [noteContent, setNoteContent] = useState(currentDayPlan.dailyNote || currentDayPlan.math2Task?.notes || '');
   const [isNoteSaved, setIsNoteSaved] = useState(false);
   const [scheduleViewMode, setScheduleViewMode] = useState<'table' | 'cards'>('table');
+  const [scheduleMode, setScheduleMode] = useState<'mock' | 'non_mock'>(() => {
+    return desktopNotificationManager.getScheduleMode();
+  });
+
+  const handleScheduleModeChange = (mode: 'mock' | 'non_mock') => {
+    setScheduleMode(mode);
+    desktopNotificationManager.setScheduleMode(mode);
+  };
+
+  const activeSlots = scheduleMode === 'mock' ? MOCK_SCHEDULE_SLOTS : NON_MOCK_SCHEDULE_SLOTS;
 
   const chinaNow = getChinaDateInfo();
   const currentMinutes = chinaNow.hour * 60 + chinaNow.minute;
@@ -374,16 +501,50 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <Clock className="h-5 w-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                 <h2 className="text-base font-bold text-white font-['Plus_Jakarta_Sans',sans-serif]">
                   战时每日执行时刻表 (Daily Battle Timeboxing)
                 </h2>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold">
-                  全真考场作息
+
+                {/* 模式切换调整按钮（直接放在时刻表标题旁） */}
+                <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-950 border border-slate-800 text-xs shadow-inner">
+                  <button
+                    onClick={() => handleScheduleModeChange('mock')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      scheduleMode === 'mock'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/30'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                    }`}
+                    title="切换为模考日作息（提醒系统同步更新）"
+                  >
+                    <span>📝 模考日</span>
+                  </button>
+                  <button
+                    onClick={() => handleScheduleModeChange('non_mock')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                      scheduleMode === 'non_mock'
+                        ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/30'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                    }`}
+                    title="切换为非模考日作息（提醒系统同步更新）"
+                  >
+                    <span>📖 非模考日</span>
+                  </button>
+                </div>
+
+                <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full border font-semibold flex items-center gap-1 ${
+                  scheduleMode === 'mock'
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                  {scheduleMode === 'mock' ? '模考日作息 · 提醒联动' : '非模考日作息 · 提醒联动'}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                严防死守上午数学真题（8:30–11:30）与下午408主力（13:30–17:30 + 18:30–21:30），晚上复盘白纸重做
+              <p className="text-xs text-slate-400 mt-1">
+                {scheduleMode === 'mock'
+                  ? '模考日节奏：严防死守上午数学全真模考（8:30–11:30）与下午408主力（13:30–17:30 + 18:30–21:30），晚上复盘白纸重做'
+                  : '非模考日节奏：上午数学专项与错题重做（8:30–11:30），下午408攻坚与政治刷题，晚上数学晚练与政治背诵'}
               </p>
             </div>
           </div>
@@ -426,8 +587,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
 
-
-
         {/* View Mode 1: Verbatim Markdown Table View */}
         {scheduleViewMode === 'table' ? (
           <div className="overflow-x-auto rounded-xl border border-slate-800">
@@ -449,7 +608,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/70 text-slate-300">
-                {USER_SCHEDULE_SLOTS.map((slot) => {
+                {activeSlots.map((slot) => {
                   const isNow = currentMinutes >= slot.startMinutes && currentMinutes < slot.endMinutes;
                   return (
                     <tr
@@ -499,7 +658,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         ) : (
           /* View Mode 2: Sequential Interactive Cards */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {USER_SCHEDULE_SLOTS.map((slot) => {
+            {activeSlots.map((slot) => {
               const isNow = currentMinutes >= slot.startMinutes && currentMinutes < slot.endMinutes;
               return (
                 <div
@@ -540,7 +699,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
         <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60 gap-2">
           <span className="text-slate-400">
-            执行铁律：严格遵守上午 3h 闭卷模考 + 下午 7h (4h主力+3h追赶) 408 集中爆破，晚间白纸重做闭环！
+            {scheduleMode === 'mock'
+              ? '执行铁律：严格遵守上午 3h 闭卷模考 + 下午 7h (4h主力+3h追赶) 408 集中爆破，晚间白纸重做闭环！'
+              : '执行铁律：上午 3h 专项补漏与错题重做 + 下午 3.5h 408 与政治刷题 + 晚间 408主力与数学/政治闭环！'}
           </span>
           <button
             onClick={() => onNavigateToTab('workstation')}

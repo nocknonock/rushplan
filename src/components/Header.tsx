@@ -403,7 +403,7 @@ export const Header: React.FC<HeaderProps> = ({
                           )}
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                          时间节点到达（08:30数学、13:30 408）时在右下角弹窗
+                          按模考/非模考日时刻表（首页一键切换），到达各科节点时右下角自动弹窗
                         </p>
                       </div>
                     </div>

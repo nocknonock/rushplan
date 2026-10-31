@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DayPlan } from '../types/kaoyan';
 import { SUBSEQUENT_PHASES } from '../data/scheduleData';
+import { POLITICS_PHASES } from '../data/politicsScheduleData';
 import {
   Calendar,
   CheckCircle2,
@@ -24,6 +25,7 @@ import {
   Cpu,
   Target,
   Check,
+  Award,
 } from 'lucide-react';
 
 interface DailyTimelineProps {
@@ -51,14 +53,17 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   onTogglePoliticsComplete,
   onSaveDailyNote,
 }) => {
-  // Primary Decoupled Track: 'math' (数学二专属) | 'cs' (408专属) | 'all' (全科双轨协同)
-  const [viewTrack, setViewTrack] = useState<'math' | 'cs' | 'all'>('math');
+  // Primary Decoupled Track: 'math' (数学二专属) | 'cs' (408专属) | 'politics' (政治专属) | 'all' (全科多轨统筹)
+  const [viewTrack, setViewTrack] = useState<'math' | 'cs' | 'politics' | 'all'>('math');
 
   // Sub-phase filter for Math
   const [mathPhaseFilter, setMathPhaseFilter] = useState<'all' | 'phase1' | 'phase2' | 'phase3' | 'exam'>('all');
 
   // Sub-phase filter for CS
   const [csPhaseFilter, setCsPhaseFilter] = useState<'all' | 'co' | 'os' | 'cn' | 'pastPapers' | 'exam'>('all');
+
+  // Sub-phase filter for Politics (10.30-11.5, 11.6-11.21, 11.22-11.30, 12.1-12.18)
+  const [politicsPhaseFilter, setPoliticsPhaseFilter] = useState<'all' | 'phase1' | 'phase2' | 'phase3' | 'phase4'>('all');
 
   // Status Filter
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -116,6 +121,15 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     return 'co';
   };
 
+  // Helper to determine Politics task phase category (10.30-11.5, 11.6-11.21, 11.22-11.30, 12.1-12.18)
+  const getPoliticsCategory = (date: string) => {
+    if (date >= '2026-12-01') return 'phase4';
+    if (date >= '2026-11-22') return 'phase3';
+    if (date >= '2026-11-06') return 'phase2';
+    if (date >= '2026-10-30') return 'phase1';
+    return 'early';
+  };
+
   // Filter plans based on active track and sub-filters
   const filteredPlans = plans.filter((plan) => {
     // 1. Notes only filter
@@ -153,10 +167,25 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
       return true;
     }
 
+    if (viewTrack === 'politics') {
+      const cat = getPoliticsCategory(plan.date);
+      if (politicsPhaseFilter === 'phase1' && cat !== 'phase1') return false;
+      if (politicsPhaseFilter === 'phase2' && cat !== 'phase2') return false;
+      if (politicsPhaseFilter === 'phase3' && cat !== 'phase3') return false;
+      if (politicsPhaseFilter === 'phase4' && cat !== 'phase4') return false;
+
+      // Status filter for Politics
+      const isPolDone = Boolean(plan.politicsTask?.isCompleted);
+      if (statusFilter === 'completed' && !isPolDone) return false;
+      if (statusFilter === 'pending' && isPolDone) return false;
+      return true;
+    }
+
     // viewTrack === 'all'
     const mathDone = !plan.math2Task || plan.math2Task.isCompleted;
     const csDone = !plan.csTask || plan.csTask.isCompleted;
-    const isAllDone = mathDone && csDone;
+    const polDone = !plan.politicsTask || plan.politicsTask.isCompleted;
+    const isAllDone = mathDone && csDone && polDone;
 
     if (statusFilter === 'completed' && !isAllDone) return false;
     if (statusFilter === 'pending' && isAllDone) return false;
@@ -177,6 +206,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   const completedCsDays = plans.filter((p) => p.csTask?.isCompleted).length;
   const csPercent = totalCsDays > 0 ? Math.round((completedCsDays / totalCsDays) * 100) : 0;
 
+  const corePoliticsPlans = plans.filter((p) => p.date >= '2026-10-30' && p.date <= '2026-12-18');
+  const totalPoliticsDays = corePoliticsPlans.length;
+  const completedPoliticsDays = corePoliticsPlans.filter((p) => p.politicsTask?.isCompleted).length;
+  const politicsPercent = totalPoliticsDays > 0 ? Math.round((completedPoliticsDays / totalPoliticsDays) * 100) : 0;
+
   return (
     <div className="space-y-6">
       {/* 1. Master Decoupled Track Navigation Bar */}
@@ -189,6 +223,33 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               <span>专项日程表切换:</span>
             </span>
             <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+              <button
+                onClick={() => setViewTrack('all')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewTrack === 'all'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/50 scale-[1.02]'
+                    : 'text-slate-300 hover:text-emerald-400 hover:bg-slate-900'
+                }`}
+              >
+                <Target className="h-4 w-4" />
+                <span>⚔️ 三科并列日程表 (数学·408·政治同级)</span>
+              </button>
+
+              <button
+                onClick={() => setViewTrack('politics')}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewTrack === 'politics'
+                    ? 'bg-rose-500 text-slate-950 shadow-md shadow-rose-950/50 scale-[1.02]'
+                    : 'text-slate-300 hover:text-rose-400 hover:bg-slate-900'
+                }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>📕 政治专属日程表</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${viewTrack === 'politics' ? 'bg-slate-950/30 text-slate-900' : 'bg-slate-800 text-rose-400'}`}>
+                  4大阶段
+                </span>
+              </button>
+
               <button
                 onClick={() => setViewTrack('math')}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -217,18 +278,6 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${viewTrack === 'cs' ? 'bg-slate-950/30 text-slate-900' : 'bg-slate-800 text-cyan-400'}`}>
                   74天全景
                 </span>
-              </button>
-
-              <button
-                onClick={() => setViewTrack('all')}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewTrack === 'all'
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/50 scale-[1.02]'
-                    : 'text-slate-300 hover:text-emerald-400 hover:bg-slate-900'
-                }`}
-              >
-                <Target className="h-4 w-4" />
-                <span>⚔️ 全科双轨统筹日程表</span>
               </button>
             </div>
           </div>
@@ -452,18 +501,207 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           </div>
         )}
 
+        {viewTrack === 'politics' && (
+          <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-rose-400">
+                    考研思想政治理论专项推进日程
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    (恢复知识框架 10.30-11.5 + 肖八第一轮 11.6-11.21 + 巩固选择题 11.22-11.30 + 肖四背诵优先 12.1-12.18)
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  严密契合数学模考日/非模考日交替节奏，四阶段层层推进，选择题攻坚与主观题背诵稳扎稳打！
+                </p>
+              </div>
+
+              {/* Sub-phase Filter Tabs for Politics */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <button
+                  onClick={() => setPoliticsPhaseFilter('all')}
+                  className={`px-2.5 py-1 rounded-md transition-colors ${
+                    politicsPhaseFilter === 'all'
+                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  全阶段
+                </button>
+                <button
+                  onClick={() => setPoliticsPhaseFilter('phase1')}
+                  className={`px-2.5 py-1 rounded-md transition-colors ${
+                    politicsPhaseFilter === 'phase1'
+                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  一阶段: 恢复知识框架 (10.30-11.5)
+                </button>
+                <button
+                  onClick={() => setPoliticsPhaseFilter('phase2')}
+                  className={`px-2.5 py-1 rounded-md transition-colors ${
+                    politicsPhaseFilter === 'phase2'
+                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  二阶段: 肖八第一轮 (11.6-11.21)
+                </button>
+                <button
+                  onClick={() => setPoliticsPhaseFilter('phase3')}
+                  className={`px-2.5 py-1 rounded-md transition-colors ${
+                    politicsPhaseFilter === 'phase3'
+                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  三阶段: 巩固选择题 (11.22-11.30)
+                </button>
+                <button
+                  onClick={() => setPoliticsPhaseFilter('phase4')}
+                  className={`px-2.5 py-1 rounded-md transition-colors ${
+                    politicsPhaseFilter === 'phase4'
+                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  四阶段: 肖四背诵优先 (12.1-12.18)
+                </button>
+              </div>
+            </div>
+
+            {/* Verbatim Phase Strategic Overview Memo */}
+            <div className="rounded-xl bg-slate-950/80 border border-rose-500/25 p-3 text-xs space-y-2">
+              {politicsPhaseFilter === 'phase1' && (
+                <div className="space-y-1.5 text-slate-300">
+                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span>10 月 30 日—11 月 5 日：恢复知识框架</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
+                    <li><strong className="text-white">非模考日政治任务（70–90 分钟）：</strong>目标：恢复知识框架，开始稳定刷题。</li>
+                    <li className="pl-4 text-slate-400">· 20 min 知识输入：翻阅腿姐背诵手册，或观看一个必要的技巧课片段。只处理当天对应的知识点，不从头重听完整课程。</li>
+                    <li className="pl-4 text-slate-400">· 25 min 选择题训练：小程序完成 15～20 题，或者做一组专项练习。</li>
+                    <li className="pl-4 text-slate-400">· 25 min 错题复盘：分析错误选项，回到手册定位知识点，标记容易混淆的概念。</li>
+                    <li className="pl-4 text-slate-400">· 10 min 闭卷回忆：合上手册，回忆今天学到的关键词、理论关系和容易混淆的内容。</li>
+                    <li><strong className="text-white">模考日：</strong>只需完成 10～15 道题和必要订正即可，目的是保持连续性。</li>
+                  </ul>
+                </div>
+              )}
+
+              {politicsPhaseFilter === 'phase2' && (
+                <div className="space-y-2 text-slate-300">
+                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span>11 月 6 日—11 月 21 日：肖八第一轮</span>
+                  </div>
+                  <p className="text-slate-300">
+                    这一阶段，你原有的“每套肖八用两天”方案很适合非模考日与模考日交替的节奏。建议采用下面的任务组合：
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1">
+                    <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                      <span className="text-rose-400 font-bold block">数学非模考日 (60～90m)</span>
+                      <span className="text-slate-300 text-[11px]">完成一套肖八选择题，限时训练后订正</span>
+                    </div>
+                    <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                      <span className="text-rose-400 font-bold block">数学模考日 (40～60m)</span>
+                      <span className="text-slate-300 text-[11px]">复盘前一套肖八错题，回到手册查漏补缺</span>
+                    </div>
+                    <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                      <span className="text-rose-400 font-bold block">两日循环结束 (10～15m)</span>
+                      <span className="text-slate-300 text-[11px]">回顾反复出错的知识点，必要时补做小程序题</span>
+                    </div>
+                  </div>
+                  <p className="text-amber-200/90 text-[11px] leading-relaxed">
+                    ⚠️ <strong>需要注意：</strong>一套肖八选择题如果做完后没有充分分析错项，下一套的收益会大打折扣。非模考日负责推进新卷，模考日负责巩固与回顾，形成互补。如果不严格隔天交替，保持“做卷—复盘”的先后关系即可。
+                  </p>
+                </div>
+              )}
+
+              {politicsPhaseFilter === 'phase3' && (
+                <div className="space-y-1.5 text-slate-300">
+                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span>11 月 22 日—11 月 30 日：巩固选择题</span>
+                  </div>
+                  <p className="text-slate-300">这个阶段不建议继续大量扩充新资料，而应重点解决重复错误。</p>
+                  <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
+                    <li><strong className="text-white">非模考日：</strong>集中复盘肖八错题，按马原、史纲、毛中特、思修、时政分类整理。</li>
+                    <li><strong className="text-white">模考日：</strong>小程序维持手感，复习当天最容易遗忘的 2～3 个知识点。</li>
+                    <li><strong className="text-white">每周至少一次：</strong>随机抽取一组选择题，检查之前的错误是否真正解决。</li>
+                  </ul>
+                  <p className="text-slate-400 text-[11px] pt-1">
+                    💡 这一阶段可以适当降低技巧课的时间占比，把时间转移到主动回忆和错题复做上。
+                  </p>
+                </div>
+              )}
+
+              {politicsPhaseFilter === 'phase4' && (
+                <div className="space-y-2 text-slate-300">
+                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span>12 月 1 日—12 月 18 日：肖四背诵优先</span>
+                  </div>
+                  <p className="text-slate-300">肖四到手后，非模考日的集中时段应该逐步转向主观题。</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1">
+                    <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                      <span className="text-rose-400 font-bold block">数学非模考日 (80～90m)</span>
+                      <span className="text-slate-300 text-[11px]">新主观题背诵 + 旧内容回忆 + 选择题复盘</span>
+                    </div>
+                    <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                      <span className="text-rose-400 font-bold block">数学模考日 (40～60m)</span>
+                      <span className="text-slate-300 text-[11px]">复述已学主观题框架 + 小程序或错题复习</span>
+                    </div>
+                    <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                      <span className="text-rose-400 font-bold block">肖四首轮完成后 (60～90m)</span>
+                      <span className="text-slate-300 text-[11px]">闭卷回忆、检查遗漏、集中补薄弱题</span>
+                    </div>
+                  </div>
+                  <p className="text-amber-200/90 text-[11px] leading-relaxed">
+                    ⚠️ <strong>强调：</strong>不要把肖四主观题背诵理解为只在非模考日进行。主观题记忆依赖间隔复习，模考日也应该抽出 10～20 分钟回忆前一天背过的内容。如果肖四到手较晚，应优先完成肖四主观题的首轮学习和反复回忆，而不是为了维持原计划去压缩睡眠。
+                  </p>
+                </div>
+              )}
+
+              {politicsPhaseFilter === 'all' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                  <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                    <span className="text-rose-300 font-bold block">10.30 - 11.5 恢复框架</span>
+                    <span className="text-slate-400">非模考日70-90m四步拆解；模考日10-15题保温</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                    <span className="text-rose-300 font-bold block">11.6 - 11.21 肖八第一轮</span>
+                    <span className="text-slate-400">每套两天：非模考日做卷订正，模考日错题复盘</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                    <span className="text-rose-300 font-bold block">11.22 - 11.30 巩固选择题</span>
+                    <span className="text-slate-400">按科目分类复盘错题，每周至少一次错题抽查</span>
+                  </div>
+                  <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                    <span className="text-rose-300 font-bold block">12.1 - 12.18 肖四背诵</span>
+                    <span className="text-slate-400">非模考日主观题背诵，模考日间隔复习滚动记忆</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {viewTrack === 'all' && (
           <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
             <div>
               <span className="text-sm font-bold text-white">
-                全科双轨统筹推进大纲
+                全科多轨统筹推进大纲
               </span>
               <span className="text-xs text-slate-400 ml-2 font-mono">
-                (数二 53 天真题 + 408 全景 + 考研英语 + 考研政治)
+                (数二 53 天真题 + 408 全景 + 政治 4 阶段推进 + 考研英语)
               </span>
             </div>
             <div className="text-xs text-slate-400">
-              各科并驾齐驱，每日双卡独立打卡
+              各科并驾齐驱，各专项独立打卡
             </div>
           </div>
         )}
@@ -500,8 +738,23 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             </div>
           )}
 
+          {viewTrack === 'politics' && (
+            <div className="w-full flex items-center gap-3">
+              <span className="text-slate-400 font-medium shrink-0">政治攻坚进度 (10.30-12.18):</span>
+              <div className="flex-1 bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                <div
+                  className="bg-rose-500 h-full rounded-full transition-all duration-300"
+                  style={{ width: `${politicsPercent}%` }}
+                />
+              </div>
+              <span className="font-mono text-rose-400 font-bold shrink-0">
+                {completedPoliticsDays} / {totalPoliticsDays} 天 ({politicsPercent}%)
+              </span>
+            </div>
+          )}
+
           {viewTrack === 'all' && (
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex items-center gap-2">
                 <span className="text-amber-400 font-medium shrink-0">数二:</span>
                 <div className="flex-1 bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
@@ -515,6 +768,13 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   <div className="bg-cyan-500 h-full" style={{ width: `${csPercent}%` }} />
                 </div>
                 <span className="font-mono text-slate-300 text-[11px] shrink-0">{completedCsDays}/{totalCsDays}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-rose-400 font-medium shrink-0">政治:</span>
+                <div className="flex-1 bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                  <div className="bg-rose-500 h-full" style={{ width: `${politicsPercent}%` }} />
+                </div>
+                <span className="font-mono text-slate-300 text-[11px] shrink-0">{completedPoliticsDays}/{totalPoliticsDays}</span>
               </div>
             </div>
           )}
@@ -536,6 +796,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           const isExpanded = expandedDate === plan.date;
           const mathCompleted = Boolean(plan.math2Task?.isCompleted);
           const csCompleted = Boolean(plan.csTask?.isCompleted);
+          const politicsCompleted = Boolean(plan.politicsTask?.isCompleted);
           const hasNote = Boolean(plan.dailyNote && plan.dailyNote.trim().length > 0);
 
           // Card theme based on active viewTrack
@@ -544,6 +805,8 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               ? 'border-amber-500/70 bg-slate-900/90 shadow-md shadow-amber-950/20'
               : viewTrack === 'cs'
               ? 'border-cyan-500/70 bg-slate-900/90 shadow-md shadow-cyan-950/20'
+              : viewTrack === 'politics'
+              ? 'border-rose-500/70 bg-slate-900/90 shadow-md shadow-rose-950/20'
               : 'border-emerald-500/70 bg-slate-900/90 shadow-md'
             : 'border-slate-800 bg-slate-900/40 hover:border-slate-700';
 
@@ -590,6 +853,20 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             {plan.csTask.title}
                           </h3>
                         </>
+                      ) : viewTrack === 'politics' ? (
+                        <>
+                          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                            {plan.politicsDetail?.phaseTitle ? `【${plan.politicsDetail.phaseTitle}】` : '【政治专项】'}
+                          </span>
+                          {plan.politicsDetail?.dayTypeLabel && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-rose-300 border border-slate-800">
+                              {plan.politicsDetail.dayTypeLabel}
+                            </span>
+                          )}
+                          <h3 className="text-sm font-bold text-white truncate max-w-xl">
+                            {plan.politicsDetail?.title || plan.politicsTask.title}
+                          </h3>
+                        </>
                       ) : (
                         <h3 className="text-sm font-bold text-white truncate max-w-xl">
                           {plan.theme}
@@ -613,9 +890,14 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                           <CheckCircle2 className="h-3 w-3" /> 408已搞定
                         </span>
                       )}
-                      {viewTrack === 'all' && mathCompleted && csCompleted && (
+                      {viewTrack === 'politics' && politicsCompleted && (
                         <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1 font-semibold">
-                          <CheckCircle2 className="h-3 w-3" /> 当日双科收官
+                          <CheckCircle2 className="h-3 w-3" /> 政治已搞定
+                        </span>
+                      )}
+                      {viewTrack === 'all' && mathCompleted && csCompleted && politicsCompleted && (
+                        <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1 font-semibold">
+                          <CheckCircle2 className="h-3 w-3" /> 当日全科收官
                         </span>
                       )}
                     </div>
@@ -636,22 +918,154 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         </span>
                       )}
 
+                      {viewTrack === 'politics' && (
+                        <span className="text-slate-300 truncate max-w-2xl">
+                          <strong className="text-rose-400">建议时长: </strong>
+                          <span className="text-amber-300 font-mono font-semibold mr-2">
+                            {plan.politicsDetail?.durationRange || `${plan.politicsTask.durationMinutes}分钟`}
+                          </span>
+                          <strong className="text-slate-400">任务重点: </strong>
+                          {plan.politicsDetail?.goal || plan.politicsTask.action}
+                        </span>
+                      )}
+
                       {viewTrack === 'all' && (
-                        <>
-                          {plan.math2Task && (
-                            <span className="text-amber-400/90 truncate max-w-xs">
-                              数二: {plan.math2Task.title.slice(0, 18)}...
-                            </span>
-                          )}
-                          {plan.csTask && (
-                            <>
-                              <span className="text-slate-600">·</span>
-                              <span className="text-cyan-400/90 truncate max-w-xs">
-                                408: {plan.csTask.title.slice(0, 18)}...
+                        <div className="mt-3.5 pt-3.5 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                          {/* Sub-column 1: 📐 数学二 (150分) */}
+                          <div className={`rounded-xl border p-3 flex flex-col justify-between transition-colors ${
+                            mathCompleted
+                              ? 'border-emerald-800/60 bg-emerald-950/20'
+                              : 'border-amber-500/30 bg-slate-950/60'
+                          }`}>
+                            <div>
+                              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                                <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                  [数二] {plan.math2Task?.phase.split('（')[0] || '真题模考'}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-400">08:30—11:30</span>
+                              </div>
+                              <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">
+                                {plan.math2Task?.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-300 line-clamp-2 mt-1 leading-relaxed">
+                                <strong className="text-amber-400/90 font-medium">聚焦: </strong>
+                                {plan.math2Task?.focusArea}
+                              </p>
+                            </div>
+                            <div className="pt-2 mt-2 border-t border-slate-800/60 flex items-center justify-between">
+                              <span className="text-[10px] text-slate-500 font-mono">{plan.math2Task?.suggestedDurationMinutes} 分钟</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleMathComplete(plan.math2Task!.id);
+                                }}
+                                className={`text-[11px] px-2.5 py-0.5 rounded font-medium cursor-pointer transition-colors ${
+                                  mathCompleted
+                                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+                                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                }`}
+                              >
+                                {mathCompleted ? '✓ 数二已搞定' : '○ 数二打卡'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Sub-column 2: 💻 408专业课 (150分) */}
+                          <div className={`rounded-xl border p-3 flex flex-col justify-between transition-colors ${
+                            csCompleted
+                              ? 'border-emerald-800/60 bg-emerald-950/20'
+                              : 'border-cyan-500/30 bg-slate-950/60'
+                          }`}>
+                            <div>
+                              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                                <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                                  [408] {plan.csTask?.phase.split('（')[0] || '主力攻坚'}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-400">14:00—17:30</span>
+                              </div>
+                              <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">
+                                {plan.csTask?.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-300 line-clamp-2 mt-1 leading-relaxed">
+                                <strong className="text-cyan-400/90 font-medium">焦点: </strong>
+                                {plan.csTask?.focusArea}
+                              </p>
+                            </div>
+                            <div className="pt-2 mt-2 border-t border-slate-800/60 flex items-center justify-between">
+                              <span className="text-[10px] text-slate-500 font-mono">{plan.csTask?.suggestedDurationMinutes} 分钟</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onToggleCsComplete(plan.csTask!.id);
+                                }}
+                                className={`text-[11px] px-2.5 py-0.5 rounded font-medium cursor-pointer transition-colors ${
+                                  csCompleted
+                                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+                                    : 'bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                                }`}
+                              >
+                                {csCompleted ? '✓ 408已搞定' : '○ 408打卡'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Sub-column 3: 📕 思想政治 (100分·全新四阶段同级并列) */}
+                          <div className={`rounded-xl border p-3 flex flex-col justify-between transition-colors ${
+                            politicsCompleted
+                              ? 'border-emerald-800/60 bg-emerald-950/20'
+                              : 'border-rose-500/30 bg-slate-950/60'
+                          }`}>
+                            <div>
+                              <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
+                                <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                  {plan.politicsDetail?.phaseTitle ? `[政治·${plan.politicsDetail.phaseTitle}]` : '[思想政治]'}
+                                </span>
+                                <span className="text-[10px] font-mono text-amber-300 bg-slate-900 px-1.5 py-0.2 rounded border border-slate-800">
+                                  {plan.politicsDetail?.dayTypeLabel || '推进日'}
+                                </span>
+                              </div>
+                              <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">
+                                {plan.politicsDetail?.title || plan.politicsTask.title}
+                              </h4>
+
+                              {/* Concrete 4-Step Breakdown chips for Phase 1 / Directives */}
+                              {plan.politicsDetail?.steps && plan.politicsDetail.steps.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-1 mt-1.5">
+                                  {plan.politicsDetail.steps.slice(0, 4).map((st, i) => (
+                                    <div key={i} className="bg-slate-900/90 p-1 rounded border border-slate-800/80 text-[10px]">
+                                      <div className="text-rose-300 font-semibold flex items-center justify-between">
+                                        <span className="truncate">{st.title}</span>
+                                        <span className="text-amber-400 font-mono text-[9px]">{st.duration}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-[11px] text-slate-300 line-clamp-2 mt-1 leading-relaxed">
+                                  {plan.politicsDetail?.goal || plan.politicsTask.action}
+                                </p>
+                              )}
+                            </div>
+                            <div className="pt-2 mt-2 border-t border-slate-800/60 flex items-center justify-between">
+                              <span className="text-[10px] text-amber-300 font-mono font-medium">
+                                {plan.politicsDetail?.durationRange || `${plan.politicsTask.durationMinutes}m`}
                               </span>
-                            </>
-                          )}
-                        </>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onTogglePoliticsComplete?.(plan.date);
+                                }}
+                                className={`text-[11px] px-2.5 py-0.5 rounded font-medium cursor-pointer transition-colors ${
+                                  politicsCompleted
+                                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
+                                    : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                }`}
+                              >
+                                {politicsCompleted ? '✓ 政治已搞定' : '○ 政治打卡'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
 
@@ -739,6 +1153,33 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     </button>
                   )}
 
+                  {viewTrack === 'politics' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTogglePoliticsComplete?.(plan.date);
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        politicsCompleted
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
+                          : 'bg-rose-950/40 text-rose-300 border border-rose-900/60 hover:bg-rose-900/50'
+                      }`}
+                      title={politicsCompleted ? '点击标记为未完成' : '点击打卡完成今日政治任务'}
+                    >
+                      {politicsCompleted ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>政治已完成</span>
+                        </>
+                      ) : (
+                        <>
+                          <Circle className="h-3.5 w-3.5 text-rose-400" />
+                          <span>政治打卡</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
                   {viewTrack === 'all' && (
                     <div className="flex items-center gap-1.5">
                       {plan.math2Task && (
@@ -763,6 +1204,15 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                           408: {csCompleted ? '完成' : '待办'}
                         </span>
                       )}
+                      <span
+                        className={`text-[11px] px-2 py-0.5 rounded font-mono font-medium ${
+                          politicsCompleted
+                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/50'
+                            : 'bg-rose-950/40 text-rose-300 border border-rose-900/50'
+                        }`}
+                      >
+                        政治: {politicsCompleted ? '完成' : '待办'}
+                      </span>
                     </div>
                   )}
 
@@ -958,53 +1408,135 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     </div>
                   )}
 
-                  {/* ENGLISH & POLITICS SECTION (In all tracks or accessible on expand) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                    <div
-                      className={`p-3 rounded-xl border transition-colors ${
-                        plan.englishTask.isCompleted
-                          ? 'bg-emerald-950/20 border-emerald-800/50'
-                          : 'bg-slate-900/40 border-slate-800/80'
-                      }`}
-                    >
-                      <button
-                        onClick={() => onToggleEnglishComplete?.(plan.date)}
-                        className="flex items-center gap-1.5 text-left font-semibold text-emerald-400 mb-1 cursor-pointer group"
-                      >
-                        {plan.englishTask.isCompleted ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                        ) : (
-                          <Circle className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 shrink-0" />
-                        )}
-                        <span className={plan.englishTask.isCompleted ? 'line-through text-slate-400' : ''}>
-                          [英语] {plan.englishTask.title}
+                  {/* POLITICS DEDICATED SECTION (Parallel to Math & 408) */}
+                  {(viewTrack === 'politics' || viewTrack === 'all') && (
+                    <div className="rounded-xl border border-rose-500/30 bg-slate-900/70 p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onTogglePoliticsComplete?.(plan.date)}
+                            className="text-rose-400 hover:text-rose-300 cursor-pointer"
+                          >
+                            {plan.politicsTask.isCompleted ? (
+                              <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                            ) : (
+                              <Circle className="h-5 w-5 text-slate-500" />
+                            )}
+                          </button>
+                          <div>
+                            <span className="text-xs font-mono text-rose-400 font-bold mr-2">
+                              {plan.politicsDetail?.phaseTitle ? `【${plan.politicsDetail.phaseTitle}】` : '【考研政治】'}
+                            </span>
+                            {plan.politicsDetail?.dayTypeLabel && (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-rose-300 border border-slate-800 mr-2">
+                                {plan.politicsDetail.dayTypeLabel}
+                              </span>
+                            )}
+                            <span className="font-bold text-white text-sm">
+                              {plan.politicsDetail?.title || plan.politicsTask.title}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800 shrink-0">
+                          建议时间: {plan.politicsDetail?.durationRange || `${plan.politicsTask.durationMinutes} 分钟`}
                         </span>
-                      </button>
-                      <p className="text-slate-400 pl-5.5 leading-relaxed">{plan.englishTask.action}</p>
-                    </div>
+                      </div>
 
-                    <div
-                      className={`p-3 rounded-xl border transition-colors ${
-                        plan.politicsTask.isCompleted
-                          ? 'bg-emerald-950/20 border-emerald-800/50'
-                          : 'bg-slate-900/40 border-slate-800/80'
-                      }`}
-                    >
-                      <button
-                        onClick={() => onTogglePoliticsComplete?.(plan.date)}
-                        className="flex items-center gap-1.5 text-left font-semibold text-indigo-400 mb-1 cursor-pointer group"
-                      >
-                        {plan.politicsTask.isCompleted ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                        ) : (
-                          <Circle className="h-4 w-4 text-slate-500 group-hover:text-indigo-400 shrink-0" />
+                      <div className="space-y-3 text-slate-300">
+                        {plan.politicsDetail?.goal && (
+                          <p className="leading-relaxed">
+                            <strong className="text-rose-400">阶段目标：</strong>
+                            {plan.politicsDetail.goal}
+                          </p>
                         )}
-                        <span className={plan.politicsTask.isCompleted ? 'line-through text-slate-400' : ''}>
-                          [政治] {plan.politicsTask.title}
-                        </span>
-                      </button>
-                      <p className="text-slate-400 pl-5.5 leading-relaxed">{plan.politicsTask.action}</p>
+
+                        {/* Step-by-step breakdown */}
+                        {plan.politicsDetail?.steps && plan.politicsDetail.steps.length > 0 && (
+                          <div className="space-y-1.5">
+                            <strong className="text-slate-400 block mb-1">各环节精细时间预算与落地执行：</strong>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                              {plan.politicsDetail.steps.map((st, i) => (
+                                <div key={i} className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80 space-y-1">
+                                  <div className="flex items-center justify-between text-rose-300 font-semibold">
+                                    <span className="flex items-center gap-1.5">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                      <span>{st.title}</span>
+                                    </span>
+                                    <span className="font-mono text-amber-400 text-[10px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                                      {st.duration}
+                                    </span>
+                                  </div>
+                                  <p className="text-slate-300 leading-relaxed text-[11px]">{st.detail}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Table representation for Phase 2 / Phase 4 */}
+                        {plan.politicsDetail?.tableData && (
+                          <div className="overflow-x-auto rounded-lg border border-slate-800">
+                            <table className="w-full text-left text-[11px]">
+                              <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                                <tr>
+                                  <th className="p-2 font-medium">日程类型</th>
+                                  <th className="p-2 font-medium">政治任务</th>
+                                  <th className="p-2 font-medium">建议时长</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800/60 bg-slate-900/40">
+                                {plan.politicsDetail.tableData.map((row, rIdx) => {
+                                  const isCurrentMatch =
+                                    (plan.politicsDetail?.dayType === 'math_non_mock' && row.scheduleType.includes('非模考')) ||
+                                    (plan.politicsDetail?.dayType === 'math_mock' && row.scheduleType.includes('模考日') && !row.scheduleType.includes('非模考')) ||
+                                    (plan.politicsDetail?.dayType === 'post_round1' && row.scheduleType.includes('首轮完成'));
+                                  return (
+                                    <tr key={rIdx} className={isCurrentMatch ? 'bg-rose-500/10 text-white font-medium' : 'text-slate-300'}>
+                                      <td className="p-2 font-mono whitespace-nowrap text-rose-300">{row.scheduleType} {isCurrentMatch && '★ (今日)'}</td>
+                                      <td className="p-2">{row.task}</td>
+                                      <td className="p-2 font-mono text-amber-300 whitespace-nowrap">{row.duration}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Directives & Discipline */}
+                        {plan.politicsDetail?.keyDirectives && plan.politicsDetail.keyDirectives.length > 0 && (
+                          <div className="text-[11px] text-amber-200/90 bg-amber-950/20 p-2.5 rounded-lg border border-amber-900/40 leading-relaxed">
+                            <strong className="text-amber-400">核心纪律与注意事项：</strong>
+                            {plan.politicsDetail.keyDirectives.join('；')}
+                          </div>
+                        )}
+
+                        {plan.politicsDetail?.guidelines && (
+                          <div className="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800 leading-relaxed">
+                            <span className="text-slate-500 font-medium">阶段备考指导：</span>
+                            <span className="ml-1">{plan.politicsDetail.guidelines}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  )}
+
+                  {/* ENGLISH SECTION */}
+                  <div className="p-3 rounded-xl border border-slate-800/80 bg-slate-900/40 text-[11px]">
+                    <button
+                      onClick={() => onToggleEnglishComplete?.(plan.date)}
+                      className="flex items-center gap-1.5 text-left font-semibold text-emerald-400 mb-1 cursor-pointer group"
+                    >
+                      {plan.englishTask.isCompleted ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-slate-500 group-hover:text-emerald-400 shrink-0" />
+                      )}
+                      <span className={plan.englishTask.isCompleted ? 'line-through text-slate-400' : ''}>
+                        [英语日常保温] {plan.englishTask.title}
+                      </span>
+                    </button>
+                    <p className="text-slate-400 pl-5.5 leading-relaxed">{plan.englishTask.action}</p>
                   </div>
 
                   {/* Daily Reflection & Notes Section in Expanded Card */}

@@ -1,6 +1,7 @@
 import { DayPlan } from '../types/kaoyan';
+import { getPoliticsTaskForDate } from './politicsScheduleData';
 
-export const INITIAL_DAY_PLANS: DayPlan[] = [
+const RAW_DAY_PLANS: DayPlan[] = [
   {
     "date": "2026-10-08",
     "formattedDate": "10月8日",
@@ -4757,6 +4758,29 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
     }
   }
 ];
+
+export const INITIAL_DAY_PLANS: DayPlan[] = RAW_DAY_PLANS.map((plan) => {
+  const isMathMock = Boolean(plan.math2Task?.title.includes('模考'));
+  const politicsDetail = getPoliticsTaskForDate(plan.date, isMathMock, plan.math2Task?.title);
+  
+  // Format high-visibility tripartite theme (数二 · 408 · 政治)
+  const mathBrief = plan.math2Task?.title.split('（')[0] || '数二模考';
+  const csBrief = plan.csTask?.title.split('（')[0] || '408实战';
+  const polBrief = `政治【${politicsDetail.phaseTitle}】${politicsDetail.dayTypeLabel}`;
+  const tripartiteTheme = `${mathBrief} · ${csBrief} · ${polBrief}`;
+
+  return {
+    ...plan,
+    theme: tripartiteTheme,
+    politicsDetail,
+    politicsTask: {
+      ...plan.politicsTask,
+      title: politicsDetail.title,
+      action: `${politicsDetail.durationRange} · ${politicsDetail.goal || ''}`,
+      durationMinutes: politicsDetail.durationMinutes,
+    },
+  };
+});
 
 export const SUBSEQUENT_PHASES = [
   {

@@ -25,6 +25,32 @@ export interface DailyRoutineTask {
   isCompleted?: boolean;
 }
 
+export interface PoliticsTaskStep {
+  duration: string;
+  title: string;
+  detail: string;
+}
+
+export interface PoliticsDetailTask {
+  phaseId: 'phase1' | 'phase2' | 'phase3' | 'phase4' | 'early' | 'exam';
+  phaseTitle: string;
+  dateRange: string;
+  dayType: 'math_non_mock' | 'math_mock' | 'cycle_end' | 'weekly_check' | 'post_round1';
+  dayTypeLabel: string;
+  title: string;
+  durationRange: string;
+  durationMinutes: number;
+  goal?: string;
+  steps?: PoliticsTaskStep[];
+  tableData?: {
+    scheduleType: string;
+    task: string;
+    duration: string;
+  }[];
+  keyDirectives?: string[];
+  guidelines?: string;
+}
+
 export interface DayPlan {
   date: string; // YYYY-MM-DD
   formattedDate: string; // e.g. "10月8日"
@@ -34,6 +60,7 @@ export interface DayPlan {
   csTask?: DailyTaskItem;
   englishTask: DailyRoutineTask;
   politicsTask: DailyRoutineTask;
+  politicsDetail?: PoliticsDetailTask;
   dailyNote?: string; // 每日复盘与未完成留存笔记
   dailyNoteUpdatedAt?: string; // 笔记记录或更新时间戳
 }

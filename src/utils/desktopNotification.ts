@@ -10,7 +10,7 @@ export interface ScheduleNode {
   actionSummary: string;
 }
 
-export const TIME_NODES: ScheduleNode[] = [
+export const MOCK_DAY_TIME_NODES: ScheduleNode[] = [
   {
     timeStr: '08:00',
     hour: 8,
@@ -85,10 +85,106 @@ export const TIME_NODES: ScheduleNode[] = [
   },
 ];
 
+export const NON_MOCK_DAY_TIME_NODES: ScheduleNode[] = [
+  {
+    timeStr: '08:00',
+    hour: 8,
+    minute: 0,
+    title: '【08:00 晨读开启】政治 / 英语早读 (30m)',
+    subjectName: '早读唤醒',
+    actionSummary: '政治手册回顾 15 分钟 + 英语词汇 15 分钟。',
+  },
+  {
+    timeStr: '08:30',
+    hour: 8,
+    minute: 30,
+    title: '【08:30 数学专项】错题重做与薄弱补漏 (3h)',
+    subjectName: '数学专项训练',
+    actionSummary: '专项训练、错题重做、薄弱知识点补漏，攻克计算死穴。',
+  },
+  {
+    timeStr: '11:30',
+    hour: 11,
+    minute: 30,
+    title: '【11:30 数学复盘】错误总结与公式回忆 (30m)',
+    subjectName: '数学复盘',
+    actionSummary: '总结上午错误，回忆关键公式与解题方法，深化反射。',
+  },
+  {
+    timeStr: '12:00',
+    hour: 12,
+    minute: 0,
+    title: '【12:00 午餐休息】离开书桌正常充能 (30m)',
+    subjectName: '午餐与休息',
+    actionSummary: '离开书桌，正常休息放松，保持体能精力充沛。',
+  },
+  {
+    timeStr: '12:30',
+    hour: 12,
+    minute: 30,
+    title: '【12:30 考研英语】阅读/作文/新题型训练 (1h)',
+    subjectName: '考研英语',
+    actionSummary: '每日阅读或作文、新题型、翻译训练，手感保温。',
+  },
+  {
+    timeStr: '13:30',
+    hour: 13,
+    minute: 30,
+    title: '【13:30 408攻坚】真题复习与重点突破 (3.5h)',
+    subjectName: '408重点突破',
+    actionSummary: '真题、知识点复习、重点章节突破（13:30—17:00）。',
+  },
+  {
+    timeStr: '17:00',
+    hour: 17,
+    minute: 0,
+    title: '【17:00 政治刷题】小程序或选择题复盘 (30m)',
+    subjectName: '政治刷题',
+    actionSummary: '小程序 15～20 题，或复盘一组选择题，查漏补缺。',
+  },
+  {
+    timeStr: '17:30',
+    hour: 17,
+    minute: 30,
+    title: '【17:30 晚饭与休息】清零缓存彻底放松 (1h)',
+    subjectName: '晚饭与休息',
+    actionSummary: '离开书桌，散步或放松身心，准备晚间高能冲刺。',
+  },
+  {
+    timeStr: '18:30',
+    hour: 18,
+    minute: 30,
+    title: '【18:30 408主力二段】继续主力任务 (2h)',
+    subjectName: '408主力任务',
+    actionSummary: '继续 408 主力任务，保质保量完成当天计划。',
+  },
+  {
+    timeStr: '20:30',
+    hour: 20,
+    minute: 30,
+    title: '【20:30 数学晚练】关键问题处理与错题回顾 (1.5h)',
+    subjectName: '数学晚间处理',
+    actionSummary: '优先处理当天未完成的关键问题；已完成则全面回顾错题。',
+  },
+  {
+    timeStr: '22:00',
+    hour: 22,
+    minute: 0,
+    title: '【22:00 政治攻坚】手册/肖八复盘/肖四背诵 (1.5h)',
+    subjectName: '政治阶段攻坚',
+    actionSummary: '按阶段完成手册、肖八选择题复盘或肖四背诵，充实封箱。',
+  },
+];
+
+// Default backward compatibility
+export const TIME_NODES: ScheduleNode[] = MOCK_DAY_TIME_NODES;
+
 const NOTIF_STORAGE_KEY = 'kaoyan_windows_notif_enabled';
+const SCHEDULE_MODE_STORAGE_KEY = 'kaoyan_schedule_mode';
 
 class DesktopNotificationManager {
   private enabled: boolean = true;
+  private scheduleMode: 'mock' | 'non_mock' = 'mock';
   private notifiedToday: Set<string> = new Set();
   private lastDateStr: string = '';
   private onInAppToastCallback: ((node: ScheduleNode) => void) | null = null;
@@ -99,9 +195,32 @@ class DesktopNotificationManager {
       if (saved !== null) {
         this.enabled = saved === 'true';
       }
+      const savedMode = localStorage.getItem(SCHEDULE_MODE_STORAGE_KEY);
+      if (savedMode === 'mock' || savedMode === 'non_mock') {
+        this.scheduleMode = savedMode;
+      }
     } catch {
       // ignore
     }
+  }
+
+  public getScheduleMode(): 'mock' | 'non_mock' {
+    return this.scheduleMode;
+  }
+
+  public setScheduleMode(mode: 'mock' | 'non_mock') {
+    this.scheduleMode = mode;
+    try {
+      localStorage.setItem(SCHEDULE_MODE_STORAGE_KEY, mode);
+    } catch {
+      // ignore
+    }
+    // Re-evaluate schedule immediately upon switching
+    this.checkAndTriggerSchedule();
+  }
+
+  public getActiveTimeNodes(): ScheduleNode[] {
+    return this.scheduleMode === 'mock' ? MOCK_DAY_TIME_NODES : NON_MOCK_DAY_TIME_NODES;
   }
 
   public setInAppToastCallback(cb: (node: ScheduleNode) => void) {
@@ -196,7 +315,7 @@ class DesktopNotificationManager {
     const currentHour = chinaTime.hour;
     const currentMinute = chinaTime.minute;
 
-    for (const node of TIME_NODES) {
+    for (const node of this.getActiveTimeNodes()) {
       const key = `${currentDate}-${node.timeStr}`;
       // Trigger if current time matches slot hour and minute within a 2-minute window
       if (currentHour === node.hour && (currentMinute === node.minute || currentMinute === node.minute + 1)) {
