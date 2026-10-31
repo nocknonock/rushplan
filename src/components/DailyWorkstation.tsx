@@ -462,7 +462,7 @@ export const DailyWorkstation: React.FC = () => {
                         ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-950/40'
                         : s.id === 'english'
                         ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/40'
-                        : 'bg-indigo-500 text-slate-950 shadow-md shadow-indigo-950/40'
+                        : 'bg-red-500/20 text-red-200 border border-red-500/40 shadow-sm shadow-red-950/40'
                       : 'bg-slate-950/80 text-slate-300 border border-slate-800 hover:text-white hover:border-slate-700'
                   }`}
                 >
@@ -839,7 +839,7 @@ export const DailyWorkstation: React.FC = () => {
                     : isEnglish
                     ? 'border-emerald-500/40 bg-emerald-950/20'
                     : isPolitics
-                    ? 'border-indigo-500/40 bg-indigo-950/20'
+                    ? 'border-red-500/25 bg-red-950/15'
                     : isReview
                     ? 'border-purple-500/40 bg-purple-950/20'
                     : 'border-slate-800 bg-slate-900/40'

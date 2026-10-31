@@ -335,7 +335,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       case 'english':
         return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
       case 'politics':
-        return 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40';
+        return 'bg-red-500/10 text-red-300/90 border border-red-500/20';
       default:
         return 'bg-slate-800 text-slate-300 border border-slate-700';
     }
@@ -930,7 +930,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             className={`rounded-xl border p-4 transition-colors ${
               currentDayPlan.politicsTask.isCompleted
                 ? 'border-emerald-800/60 bg-emerald-950/20'
-                : 'border-slate-800 bg-slate-900/60'
+                : 'border-red-500/20 bg-slate-900/60'
             }`}
           >
             <div className="flex items-start justify-between gap-3 mb-3">
@@ -941,15 +941,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 {currentDayPlan.politicsTask.isCompleted ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
                 ) : (
-                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-rose-400 shrink-0" />
+                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-red-400/80 shrink-0" />
                 )}
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-mono font-medium text-rose-400">
+                    <span className="text-xs font-mono font-medium text-red-300/80">
                       [考研政治] {currentDayPlan.politicsDetail?.phaseTitle ? `· ${currentDayPlan.politicsDetail.phaseTitle}` : ''}
                     </span>
                     {currentDayPlan.politicsDetail?.dayTypeLabel && (
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30 font-semibold">
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-red-500/10 text-red-300/90 border border-red-500/20 font-semibold">
                         {currentDayPlan.politicsDetail.dayTypeLabel}
                       </span>
                     )}
@@ -984,7 +984,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {currentDayPlan.politicsDetail.steps.map((st, i) => (
                       <div key={i} className="rounded bg-slate-950/50 p-2 border border-slate-800/70 text-[11px] space-y-0.5">
-                        <div className="flex items-center justify-between text-rose-300 font-semibold">
+                        <div className="flex items-center justify-between text-red-300/90 font-semibold">
                           <span>{st.title}</span>
                           <span className="text-amber-400 font-mono text-[10px]">{st.duration}</span>
                         </div>
@@ -997,8 +997,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
               {/* Key Directives */}
               {currentDayPlan.politicsDetail?.keyDirectives && currentDayPlan.politicsDetail.keyDirectives.length > 0 && (
-                <div className="text-[11px] text-rose-300/90 bg-rose-950/20 p-2 rounded border border-rose-900/30">
-                  <span className="text-rose-400 font-semibold">执行纪律：</span>
+                <div className="text-[11px] text-red-300/80 bg-red-950/20 p-2 rounded border border-red-900/30">
+                  <span className="text-red-400/80 font-semibold">执行纪律：</span>
                   {currentDayPlan.politicsDetail.keyDirectives.join('；')}
                 </div>
               )}

@@ -239,13 +239,13 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 onClick={() => setViewTrack('politics')}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewTrack === 'politics'
-                    ? 'bg-rose-500 text-slate-950 shadow-md shadow-rose-950/50 scale-[1.02]'
-                    : 'text-slate-300 hover:text-rose-400 hover:bg-slate-900'
+                    ? 'bg-red-500/20 text-red-200 border border-red-500/40 shadow-sm shadow-red-950/40 scale-[1.02]'
+                    : 'text-slate-300 hover:text-red-300 hover:bg-slate-900'
                 }`}
               >
                 <BookOpen className="h-4 w-4" />
                 <span>📕 政治专属日程表</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${viewTrack === 'politics' ? 'bg-slate-950/30 text-slate-900' : 'bg-slate-800 text-rose-400'}`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${viewTrack === 'politics' ? 'bg-red-950/60 text-red-300' : 'bg-slate-800 text-red-300/80'}`}>
                   4大阶段
                 </span>
               </button>
@@ -524,7 +524,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   onClick={() => setPoliticsPhaseFilter('all')}
                   className={`px-2.5 py-1 rounded-md transition-colors ${
                     politicsPhaseFilter === 'all'
-                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
@@ -534,7 +534,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   onClick={() => setPoliticsPhaseFilter('phase1')}
                   className={`px-2.5 py-1 rounded-md transition-colors ${
                     politicsPhaseFilter === 'phase1'
-                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
@@ -544,7 +544,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   onClick={() => setPoliticsPhaseFilter('phase2')}
                   className={`px-2.5 py-1 rounded-md transition-colors ${
                     politicsPhaseFilter === 'phase2'
-                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
@@ -554,7 +554,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   onClick={() => setPoliticsPhaseFilter('phase3')}
                   className={`px-2.5 py-1 rounded-md transition-colors ${
                     politicsPhaseFilter === 'phase3'
-                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
@@ -564,7 +564,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   onClick={() => setPoliticsPhaseFilter('phase4')}
                   className={`px-2.5 py-1 rounded-md transition-colors ${
                     politicsPhaseFilter === 'phase4'
-                      ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40'
+                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
                       : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
                   }`}
                 >
@@ -574,11 +574,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             </div>
 
             {/* Verbatim Phase Strategic Overview Memo */}
-            <div className="rounded-xl bg-slate-950/80 border border-rose-500/25 p-3 text-xs space-y-2">
+            <div className="rounded-xl bg-slate-950/80 border border-red-500/20 p-3 text-xs space-y-2">
               {politicsPhaseFilter === 'phase1' && (
                 <div className="space-y-1.5 text-slate-300">
-                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                  <div className="font-bold text-red-200/95 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-400/80" />
                     <span>10 月 30 日—11 月 5 日：恢复知识框架</span>
                   </div>
                   <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1">
@@ -594,8 +594,8 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
               {politicsPhaseFilter === 'phase2' && (
                 <div className="space-y-2 text-slate-300">
-                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                  <div className="font-bold text-red-200/95 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-400/80" />
                     <span>11 月 6 日—11 月 21 日：肖八第一轮</span>
                   </div>
                   <p className="text-slate-300">
@@ -603,15 +603,15 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1">
                     <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-rose-400 font-bold block">数学非模考日 (60～90m)</span>
+                      <span className="text-red-300/90 font-bold block">数学非模考日 (60～90m)</span>
                       <span className="text-slate-300 text-[11px]">完成一套肖八选择题，限时训练后订正</span>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-rose-400 font-bold block">数学模考日 (40～60m)</span>
+                      <span className="text-red-300/90 font-bold block">数学模考日 (40～60m)</span>
                       <span className="text-slate-300 text-[11px]">复盘前一套肖八错题，回到手册查漏补缺</span>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-rose-400 font-bold block">两日循环结束 (10～15m)</span>
+                      <span className="text-red-300/90 font-bold block">两日循环结束 (10～15m)</span>
                       <span className="text-slate-300 text-[11px]">回顾反复出错的知识点，必要时补做小程序题</span>
                     </div>
                   </div>
@@ -623,8 +623,8 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
               {politicsPhaseFilter === 'phase3' && (
                 <div className="space-y-1.5 text-slate-300">
-                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                  <div className="font-bold text-red-200/95 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-400/80" />
                     <span>11 月 22 日—11 月 30 日：巩固选择题</span>
                   </div>
                   <p className="text-slate-300">这个阶段不建议继续大量扩充新资料，而应重点解决重复错误。</p>
@@ -641,22 +641,22 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
               {politicsPhaseFilter === 'phase4' && (
                 <div className="space-y-2 text-slate-300">
-                  <div className="font-bold text-rose-300 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                  <div className="font-bold text-red-200/95 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-400/80" />
                     <span>12 月 1 日—12 月 18 日：肖四背诵优先</span>
                   </div>
                   <p className="text-slate-300">肖四到手后，非模考日的集中时段应该逐步转向主观题。</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-1">
                     <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-rose-400 font-bold block">数学非模考日 (80～90m)</span>
+                      <span className="text-red-300/90 font-bold block">数学非模考日 (80～90m)</span>
                       <span className="text-slate-300 text-[11px]">新主观题背诵 + 旧内容回忆 + 选择题复盘</span>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-rose-400 font-bold block">数学模考日 (40～60m)</span>
+                      <span className="text-red-300/90 font-bold block">数学模考日 (40～60m)</span>
                       <span className="text-slate-300 text-[11px]">复述已学主观题框架 + 小程序或错题复习</span>
                     </div>
                     <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-rose-400 font-bold block">肖四首轮完成后 (60～90m)</span>
+                      <span className="text-red-300/90 font-bold block">肖四首轮完成后 (60～90m)</span>
                       <span className="text-slate-300 text-[11px]">闭卷回忆、检查遗漏、集中补薄弱题</span>
                     </div>
                   </div>
@@ -669,19 +669,19 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               {politicsPhaseFilter === 'all' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
                   <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <span className="text-rose-300 font-bold block">10.30 - 11.5 恢复框架</span>
+                    <span className="text-red-300/90 font-bold block">10.30 - 11.5 恢复框架</span>
                     <span className="text-slate-400">非模考日70-90m四步拆解；模考日10-15题保温</span>
                   </div>
                   <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <span className="text-rose-300 font-bold block">11.6 - 11.21 肖八第一轮</span>
+                    <span className="text-red-300/90 font-bold block">11.6 - 11.21 肖八第一轮</span>
                     <span className="text-slate-400">每套两天：非模考日做卷订正，模考日错题复盘</span>
                   </div>
                   <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <span className="text-rose-300 font-bold block">11.22 - 11.30 巩固选择题</span>
+                    <span className="text-red-300/90 font-bold block">11.22 - 11.30 巩固选择题</span>
                     <span className="text-slate-400">按科目分类复盘错题，每周至少一次错题抽查</span>
                   </div>
                   <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
-                    <span className="text-rose-300 font-bold block">12.1 - 12.18 肖四背诵</span>
+                    <span className="text-red-300/90 font-bold block">12.1 - 12.18 肖四背诵</span>
                     <span className="text-slate-400">非模考日主观题背诵，模考日间隔复习滚动记忆</span>
                   </div>
                 </div>
@@ -855,11 +855,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         </>
                       ) : viewTrack === 'politics' ? (
                         <>
-                          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-300/90 border border-red-500/20">
                             {plan.politicsDetail?.phaseTitle ? `【${plan.politicsDetail.phaseTitle}】` : '【政治专项】'}
                           </span>
                           {plan.politicsDetail?.dayTypeLabel && (
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-rose-300 border border-slate-800">
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-red-300/80 border border-slate-800">
                               {plan.politicsDetail.dayTypeLabel}
                             </span>
                           )}
@@ -920,7 +920,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
                       {viewTrack === 'politics' && (
                         <span className="text-slate-300 truncate max-w-2xl">
-                          <strong className="text-rose-400">建议时长: </strong>
+                          <strong className="text-red-400/80">建议时长: </strong>
                           <span className="text-amber-300 font-mono font-semibold mr-2">
                             {plan.politicsDetail?.durationRange || `${plan.politicsTask.durationMinutes}分钟`}
                           </span>
@@ -1013,11 +1013,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                           <div className={`rounded-xl border p-3 flex flex-col justify-between transition-colors ${
                             politicsCompleted
                               ? 'border-emerald-800/60 bg-emerald-950/20'
-                              : 'border-rose-500/30 bg-slate-950/60'
+                              : 'border-red-500/20 bg-slate-950/60'
                           }`}>
                             <div>
                               <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
-                                <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                                <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-300/90 border border-red-500/20">
                                   {plan.politicsDetail?.phaseTitle ? `[政治·${plan.politicsDetail.phaseTitle}]` : '[思想政治]'}
                                 </span>
                                 <span className="text-[10px] font-mono text-amber-300 bg-slate-900 px-1.5 py-0.2 rounded border border-slate-800">
@@ -1033,7 +1033,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                                 <div className="grid grid-cols-2 gap-1 mt-1.5">
                                   {plan.politicsDetail.steps.slice(0, 4).map((st, i) => (
                                     <div key={i} className="bg-slate-900/90 p-1 rounded border border-slate-800/80 text-[10px]">
-                                      <div className="text-rose-300 font-semibold flex items-center justify-between">
+                                      <div className="text-red-300/90 font-semibold flex items-center justify-between">
                                         <span className="truncate">{st.title}</span>
                                         <span className="text-amber-400 font-mono text-[9px]">{st.duration}</span>
                                       </div>
@@ -1058,7 +1058,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                                 className={`text-[11px] px-2.5 py-0.5 rounded font-medium cursor-pointer transition-colors ${
                                   politicsCompleted
                                     ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
-                                    : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                                    : 'bg-red-500/10 hover:bg-red-500/15 text-red-300/90 border border-red-500/25'
                                 }`}
                               >
                                 {politicsCompleted ? '✓ 政治已搞定' : '○ 政治打卡'}
@@ -1162,7 +1162,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         politicsCompleted
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
-                          : 'bg-rose-950/40 text-rose-300 border border-rose-900/60 hover:bg-rose-900/50'
+                          : 'bg-red-950/25 text-red-300/90 border border-red-500/20 hover:bg-red-900/40'
                       }`}
                       title={politicsCompleted ? '点击标记为未完成' : '点击打卡完成今日政治任务'}
                     >
@@ -1173,7 +1173,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         </>
                       ) : (
                         <>
-                          <Circle className="h-3.5 w-3.5 text-rose-400" />
+                          <Circle className="h-3.5 w-3.5 text-red-400/80" />
                           <span>政治打卡</span>
                         </>
                       )}
@@ -1208,7 +1208,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         className={`text-[11px] px-2 py-0.5 rounded font-mono font-medium ${
                           politicsCompleted
                             ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/50'
-                            : 'bg-rose-950/40 text-rose-300 border border-rose-900/50'
+                            : 'bg-red-950/25 text-red-300/90 border border-red-500/20'
                         }`}
                       >
                         政治: {politicsCompleted ? '完成' : '待办'}
@@ -1410,12 +1410,12 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
                   {/* POLITICS DEDICATED SECTION (Parallel to Math & 408) */}
                   {(viewTrack === 'politics' || viewTrack === 'all') && (
-                    <div className="rounded-xl border border-rose-500/30 bg-slate-900/70 p-4 space-y-3">
+                    <div className="rounded-xl border border-red-500/20 bg-slate-900/70 p-4 space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => onTogglePoliticsComplete?.(plan.date)}
-                            className="text-rose-400 hover:text-rose-300 cursor-pointer"
+                            className="text-red-400/80 hover:text-red-300 cursor-pointer"
                           >
                             {plan.politicsTask.isCompleted ? (
                               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
@@ -1424,11 +1424,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             )}
                           </button>
                           <div>
-                            <span className="text-xs font-mono text-rose-400 font-bold mr-2">
+                            <span className="text-xs font-mono text-red-300/90 font-bold mr-2">
                               {plan.politicsDetail?.phaseTitle ? `【${plan.politicsDetail.phaseTitle}】` : '【考研政治】'}
                             </span>
                             {plan.politicsDetail?.dayTypeLabel && (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-rose-300 border border-slate-800 mr-2">
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-300/90 border border-red-500/20 mr-2">
                                 {plan.politicsDetail.dayTypeLabel}
                               </span>
                             )}
@@ -1445,7 +1445,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       <div className="space-y-3 text-slate-300">
                         {plan.politicsDetail?.goal && (
                           <p className="leading-relaxed">
-                            <strong className="text-rose-400">阶段目标：</strong>
+                            <strong className="text-red-400/80">阶段目标：</strong>
                             {plan.politicsDetail.goal}
                           </p>
                         )}
@@ -1457,9 +1457,9 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                               {plan.politicsDetail.steps.map((st, i) => (
                                 <div key={i} className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80 space-y-1">
-                                  <div className="flex items-center justify-between text-rose-300 font-semibold">
+                                  <div className="flex items-center justify-between text-red-300/90 font-semibold">
                                     <span className="flex items-center gap-1.5">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                      <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
                                       <span>{st.title}</span>
                                     </span>
                                     <span className="font-mono text-amber-400 text-[10px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
