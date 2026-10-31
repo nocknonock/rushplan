@@ -1,5 +1,254 @@
 import { DayPlan } from '../types/kaoyan';
 
+// 以 documents/政治计划 为准。这里按当天数学是否全真模考，落入计划中的最低或完整要求。
+const POLITICS_SCHEDULE_BY_DATE: Record<string, DayPlan['politicsTask']> = {
+  '2026-10-31': {
+    title: '恢复知识框架：背诵手册目录',
+    action: '浏览腿姐背诵手册目录，了解马原、史纲、毛中特、思修、时政的内容分布；完成 10 道题。',
+    durationMinutes: 50,
+  },
+  '2026-11-01': {
+    title: '马原：哲学基本问题、唯物论、唯心论',
+    action: '看对应知识点，完成 15～20 道题并订正。',
+    durationMinutes: 50,
+  },
+  '2026-11-02': {
+    title: '马原：联系、发展、矛盾规律、辩证法',
+    action: '回顾易混概念，完成 10 道题。',
+    durationMinutes: 50,
+  },
+  '2026-11-03': {
+    title: '马原：实践与认识、真理与价值',
+    action: '完成 15～20 道题，尝试解释每个错误选项。',
+    durationMinutes: 50,
+  },
+  '2026-11-04': {
+    title: '马原：唯物史观、社会基本矛盾、人民群众',
+    action: '完成 15～20 道题，并完成本阶段马原错题回顾。',
+    durationMinutes: 50,
+  },
+  '2026-11-05': {
+    title: '史纲时间线与其余模块框架',
+    action: '回顾史纲重要时间点，完成 10 道题。',
+    durationMinutes: 50,
+  },
+  '2026-11-06': {
+    title: '肖八第 1 套：选择题',
+    action: '完成整套选择题，并进行初步订正。',
+    durationMinutes: 60,
+  },
+  '2026-11-07': {
+    title: '肖八第 1 套：复盘',
+    action: '复盘错题和易混概念。',
+    durationMinutes: 60,
+  },
+  '2026-11-08': {
+    title: '肖八第 2 套：选择题',
+    action: '完成整套选择题，并进行初步订正。',
+    durationMinutes: 60,
+  },
+  '2026-11-09': {
+    title: '肖八第 2 套：复盘',
+    action: '回顾错误选项。',
+    durationMinutes: 60,
+  },
+  '2026-11-10': {
+    title: '肖八第 3 套：选择题',
+    action: '完成整套选择题，并进行初步订正。',
+    durationMinutes: 60,
+  },
+  '2026-11-11': {
+    title: '肖八第 3 套：复盘',
+    action: '复习马原相关错题。',
+    durationMinutes: 60,
+  },
+  '2026-11-12': {
+    title: '肖八第 4 套：选择题',
+    action: '完成整套选择题，并进行初步订正。',
+    durationMinutes: 60,
+  },
+  '2026-11-13': {
+    title: '肖八第 4 套：复盘',
+    action: '复习错题和手册标记。',
+    durationMinutes: 60,
+  },
+  '2026-11-14': {
+    title: '肖八第 5 套：选择题',
+    action: '完成整套选择题，并进行初步订正。',
+    durationMinutes: 60,
+  },
+  '2026-11-15': {
+    title: '肖八第 5 套：复盘',
+    action: '完整分析错项，重做错误题目。',
+    durationMinutes: 60,
+  },
+  '2026-11-16': {
+    title: '肖八第 6 套：选择题',
+    action: '完成 15～20 道题，并标记疑问。',
+    durationMinutes: 60,
+  },
+  '2026-11-17': {
+    title: '肖八第 6 套：复盘',
+    action: '完成整套复盘，整理反复出错的概念。',
+    durationMinutes: 60,
+  },
+  '2026-11-18': {
+    title: '肖八第 7 套：选择题',
+    action: '完成 15～20 道题。',
+    durationMinutes: 60,
+  },
+  '2026-11-19': {
+    title: '肖八第 7 套：复盘',
+    action: '完整复盘，检查前几套反复出现的错误。',
+    durationMinutes: 60,
+  },
+  '2026-11-20': {
+    title: '肖八第 8 套：选择题',
+    action: '完成整套选择题，并进行初步订正。',
+    durationMinutes: 60,
+  },
+  '2026-11-21': {
+    title: '肖八第 8 套：复盘',
+    action: '回顾高频错题。',
+    durationMinutes: 60,
+  },
+  '2026-11-22': {
+    title: '肖八第 1～2 套错题复做',
+    action: '复做两套错题，整理仍然不理解的选项。',
+    durationMinutes: 60,
+  },
+  '2026-11-23': {
+    title: '肖八第 3～4 套错题复做',
+    action: '复盘两套，回到手册定位知识点。',
+    durationMinutes: 60,
+  },
+  '2026-11-24': {
+    title: '肖八第 5～6 套错题复做',
+    action: '复盘两套，分析重复错误。',
+    durationMinutes: 60,
+  },
+  '2026-11-25': {
+    title: '肖八第 7～8 套错题复做',
+    action: '复盘两套，完成八套卷错题第一轮汇总。',
+    durationMinutes: 60,
+  },
+  '2026-11-26': {
+    title: '小程序混合练习 30～35 题',
+    action: '完成 15～20 道题。',
+    durationMinutes: 60,
+  },
+  '2026-11-27': {
+    title: '混合练习复盘与薄弱模块定位',
+    action: '逐题订正 11 月 26 日练习，并确定最薄弱的两个知识模块。',
+    durationMinutes: 60,
+  },
+  '2026-11-28': {
+    title: '专项巩固：马原与史纲',
+    action: '复习各模块最容易混淆的概念。',
+    durationMinutes: 60,
+  },
+  '2026-11-29': {
+    title: '专项巩固：毛中特、思修与时政',
+    action: '分模块练习，结合错题回到手册查漏。',
+    durationMinutes: 60,
+  },
+  '2026-11-30': {
+    title: '选择题小测 30～35 题',
+    action: '完成 15～20 道题。',
+    durationMinutes: 60,
+  },
+  '2026-12-01': {
+    title: '肖八第 1～4 套高频错题复习',
+    action: '分模块复习前四套卷错题，完成 10 道对应练习。',
+    durationMinutes: 60,
+  },
+  '2026-12-02': {
+    title: '肖八第 5～8 套高频错题复习',
+    action: '复习一组高频错误。',
+    durationMinutes: 60,
+  },
+  '2026-12-03': {
+    title: '混合选择题练习与时政要点',
+    action: '完成 30～35 道混合选择题，并回顾时政相关知识点。',
+    durationMinutes: 60,
+  },
+  '2026-12-04': {
+    title: '高频错题清单检查与肖四准备',
+    action: '完成一次错题抽查，浏览肖四主观题题目与答案结构；肖四未到手则复习手册。',
+    durationMinutes: 60,
+  },
+  '2026-12-05': {
+    title: '肖四第 1 套：选择题与主观题前两题',
+    action: '完成整套选择题并分析错项，背诵第 1 套主观题前两题。',
+    durationMinutes: 80,
+  },
+  '2026-12-06': {
+    title: '肖四第 1 套：主观题后两题与回顾',
+    action: '完成后两题，回顾前两题；合上答案复述四道题的主要框架。',
+    durationMinutes: 80,
+  },
+  '2026-12-07': {
+    title: '肖四第 2 套：选择题与主观题前两题',
+    action: '完成整套选择题，背诵主观题前两题，并简短回顾第 1 套。',
+    durationMinutes: 80,
+  },
+  '2026-12-08': {
+    title: '肖四第 2 套：主观题后两题与回顾',
+    action: '完成第 2 套首轮背诵，复述第 1 套关键词。',
+    durationMinutes: 80,
+  },
+  '2026-12-09': {
+    title: '肖四第 3 套：选择题与主观题前两题',
+    action: '完成部分选择题，并背诵主观题前两题的核心框架。',
+    durationMinutes: 80,
+  },
+  '2026-12-10': {
+    title: '肖四第 3 套：主观题后两题与回顾',
+    action: '完成第 3 套首轮背诵，检查第 2 套记忆漏洞。',
+    durationMinutes: 80,
+  },
+  '2026-12-11': {
+    title: '肖四第 4 套：选择题与主观题前两题',
+    action: '完成整套选择题，背诵主观题前两题。',
+    durationMinutes: 80,
+  },
+  '2026-12-12': {
+    title: '肖四第 4 套：主观题后两题与回顾',
+    action: '完成四套主观题首轮学习，尝试口头回忆核心要点。',
+    durationMinutes: 80,
+  },
+  '2026-12-13': {
+    title: '肖四第一轮回顾：第 1～2 套主观题',
+    action: '逐题回忆两套答案的核心观点、论述层次与关键词。',
+    durationMinutes: 80,
+  },
+  '2026-12-14': {
+    title: '肖四第一轮回顾：第 3～4 套主观题',
+    action: '逐题回忆两套答案框架，补齐薄弱内容。',
+    durationMinutes: 80,
+  },
+  '2026-12-15': {
+    title: '肖四第二轮背诵：第 1～2 套薄弱题',
+    action: '针对遗漏较多的题目进行第二轮背诵，并抽查第一轮内容。',
+    durationMinutes: 80,
+  },
+  '2026-12-16': {
+    title: '肖四第二轮背诵：第 3～4 套薄弱题',
+    action: '完成后两套薄弱题复习，检查四套答案的熟练程度。',
+    durationMinutes: 80,
+  },
+  '2026-12-17': {
+    title: '肖四全部主观题框架总回顾',
+    action: '不看答案回忆四套主观题结构，并复习肖四选择题易错点。',
+    durationMinutes: 80,
+  },
+  '2026-12-18': {
+    title: '考前轻量复习：主观题框架、易混点与时政',
+    action: '完成最后检查，停止开新卷，不追求额外题量。',
+    durationMinutes: 80,
+  },
+};
+
 export const INITIAL_DAY_PLANS: DayPlan[] = [
   {
     "date": "2026-10-08",
@@ -4756,7 +5005,10 @@ export const INITIAL_DAY_PLANS: DayPlan[] = [
       "durationMinutes": 0
     }
   }
-];
+].map((day) => ({
+  ...day,
+  politicsTask: POLITICS_SCHEDULE_BY_DATE[day.date] ?? day.politicsTask,
+}));
 
 export const SUBSEQUENT_PHASES = [
   {
