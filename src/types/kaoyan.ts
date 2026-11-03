@@ -98,6 +98,54 @@ export interface EnglishWeekPlan {
   customizedAt?: string;
 }
 
+export type PoliticsSubTaskCategory =
+  | 'handbook'
+  | 'memorize'
+  | 'xiao8'
+  | 'xiao4_mcq'
+  | 'xiao4_essay'
+  | 'miniprogram'
+  | 'review'
+  | 'current_affairs'
+  | 'course';
+
+export interface PoliticsSubTask {
+  id: string;
+  category: PoliticsSubTaskCategory;
+  moduleName: string; // e.g. "马原", "肖八", "主观题", "小程序", "背诵手册"
+  title: string;
+  detail?: string;
+  isCompleted: boolean;
+}
+
+export interface PoliticsAcceptanceItem {
+  id: string;
+  text: string;
+  isCompleted: boolean;
+}
+
+export interface PoliticsWeekPlan {
+  id: string; // e.g. "pol-week-1"
+  weekNumber: number; // 1..7
+  title: string; // e.g. "第1周：恢复基础阶段"
+  dateRange: string; // e.g. "11月3日—11月9日"
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  stageGroup: 'foundation_xiao8' | 'mcq_consolidate' | 'xiao4_sprint';
+  phaseTitle: string; // e.g. "恢复基础阶段"
+  inputFocus: string; // 整体规划中的输入重点
+  outputFocus: string; // 整体规划中的输出重点
+  coreGoal: string; // 核心目标
+  extraGoal?: string; // 额外目标
+  subTasks: PoliticsSubTask[];
+  acceptanceCriteria: PoliticsAcceptanceItem[];
+  guidance: string[];
+  weeklyNote?: string; // 本周政治专属复盘周记（与其他科目彻底隔离）
+  weeklyNoteUpdatedAt?: string;
+  isCustomized?: boolean;
+  customizedAt?: string;
+}
+
 export interface DayPlan {
   date: string; // YYYY-MM-DD
   formattedDate: string; // e.g. "10月8日"

@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { DayPlan, EnglishWeekPlan, NoteSubjectTrack } from '../types/kaoyan';
+import { DayPlan, EnglishWeekPlan, PoliticsWeekPlan, NoteSubjectTrack } from '../types/kaoyan';
 import { BOOST_QUOTES } from '../data/mindsetCards';
 import {
   ENGLISH_CATEGORY_LABELS,
   getEnglishWeekForDate,
   getEnglishMockForDate,
 } from '../data/englishScheduleData';
+import {
+  POLITICS_CATEGORY_LABELS,
+  getPoliticsWeekForDate,
+} from '../data/politicsScheduleData';
 import { getChinaDateInfo } from '../utils/chinaDate';
 import { getIsolatedNoteForSubject } from './DailyTimeline';
 import {
@@ -24,6 +28,8 @@ import {
   Table,
   Zap,
   Languages,
+  BookOpen,
+  ClipboardCheck,
 } from 'lucide-react';
 import { desktopNotificationManager } from '../utils/desktopNotification';
 
@@ -31,6 +37,7 @@ interface DashboardOverviewProps {
   currentDayPlan: DayPlan;
   allPlans: DayPlan[];
   englishWeeks: EnglishWeekPlan[];
+  politicsWeeks: PoliticsWeekPlan[];
   todayDateStr?: string;
   onSelectDay: (date: string) => void;
   onJumpToToday?: () => void;
@@ -39,13 +46,18 @@ interface DashboardOverviewProps {
   onToggleEnglishComplete?: (date: string) => void;
   onTogglePoliticsComplete?: (date: string) => void;
   onToggleEnglishSubTask: (weekId: string, subTaskId: string) => void;
+  onTogglePoliticsSubTask: (weekId: string, subTaskId: string) => void;
+  onTogglePoliticsAcceptance: (weekId: string, criteriaId: string) => void;
   onSaveSubjectNote: (date: string, subject: NoteSubjectTrack, notes: string) => void;
   onSaveEnglishWeekNote: (weekId: string, notes: string) => void;
+  onSavePoliticsWeekNote: (weekId: string, notes: string) => void;
   onSaveDayNotes: (date: string, notes: string) => void;
   onNavigateToTab: (tab: 'timeline' | 'workstation' | 'mindset') => void;
   onNavigateToEnglishTimeline: () => void;
+  onNavigateToPoliticsTimeline: () => void;
   onOpenEditModal: (plan: DayPlan, subjectTab?: 'math2' | 'cs' | 'english' | 'politics') => void;
   onOpenEnglishWeekEditModal: (weekPlan: EnglishWeekPlan) => void;
+  onOpenPoliticsWeekEditModal: (weekPlan: PoliticsWeekPlan) => void;
   daysToExam: number;
   daysToMathPastPapers: number;
   daysToCsPastPapers: number;
@@ -73,7 +85,7 @@ export const MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
     subjectCategory: 'politics',
     badge: '早读唤醒',
     content:
-      '唤醒大脑：快速过一遍英语高频词或政治核心考点提要，避免一上来直接进数学考场导致前30分钟大脑发懵。利用午饭前的碎片时间刷政治模拟卷选择题（肖八、腿四、徐六等只刷选择题）并直接复盘错题。',
+      '唤醒大脑：快速过一遍英语高频词或政治背诵手册核心提要，避免一上来直接进数学考场导致前30分钟大脑发懵。利用午饭前的碎片时间刷政治小程序或肖八选择题并直接复盘错题。',
     startMinutes: 8 * 60,
     endMinutes: 8 * 60 + 30,
   },
@@ -155,8 +167,8 @@ export const MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
     timeRange: '23:20 – 24:00',
     subjectTitle: '政治背诵',
     subjectCategory: 'politics',
-    badge: '主观题框架速记',
-    content: '22:20–23:00 / 23:20 政治主观题框架背诵（11月中下旬肖四出来后重点发力狂背）。',
+    badge: '下册线索/肖四背诵',
+    content: '22:20–23:00 / 23:20 政治背诵手册核心专题或 12月起肖四主观题背诵。',
     startMinutes: 23 * 60 + 20,
     endMinutes: 24 * 60,
   },
@@ -170,7 +182,7 @@ export const NON_MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
     subjectTitle: '政治 / 英语早读',
     subjectCategory: 'politics',
     badge: '早读唤醒',
-    content: '政治手册回顾 15 分钟 + 英语词汇 15 分钟',
+    content: '政治背诵手册回顾 15 分钟 + 英语词汇 15 分钟',
     startMinutes: 8 * 60,
     endMinutes: 8 * 60 + 30,
   },
@@ -230,7 +242,7 @@ export const NON_MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
     subjectTitle: '政治刷题 30min',
     subjectCategory: 'politics',
     badge: '小程序与选择题',
-    content: '小程序 15～20 题，或复盘一组选择题',
+    content: '小程序 15～20 题，或复盘一组肖八/肖四选择题',
     startMinutes: 17 * 60,
     endMinutes: 17 * 60 + 30,
   },
@@ -269,8 +281,8 @@ export const NON_MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
     timeRange: '22:00 – 23:30',
     subjectTitle: '政治 1.5h',
     subjectCategory: 'politics',
-    badge: '阶段复盘与背诵',
-    content: '按阶段完成手册、肖八选择题复盘或肖四背诵',
+    badge: '按周动态推进',
+    content: '按当周政治规划完成背诵手册精读、肖八选择题（做题+订正+复盘）或肖四主观题背诵',
     startMinutes: 22 * 60,
     endMinutes: 23 * 60 + 30,
   },
@@ -282,17 +294,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   currentDayPlan,
   allPlans,
   englishWeeks,
+  politicsWeeks,
   todayDateStr,
   onToggleMathComplete,
   onToggleCsComplete,
-  onTogglePoliticsComplete,
   onToggleEnglishSubTask,
+  onTogglePoliticsSubTask,
+  onTogglePoliticsAcceptance,
   onSaveSubjectNote,
   onSaveEnglishWeekNote,
+  onSavePoliticsWeekNote,
   onNavigateToTab,
   onNavigateToEnglishTimeline,
+  onNavigateToPoliticsTimeline,
   onOpenEditModal,
   onOpenEnglishWeekEditModal,
+  onOpenPoliticsWeekEditModal,
   daysToExam,
   daysToMathPastPapers,
   daysToCsPastPapers,
@@ -307,9 +324,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   );
   const todayEnglishMock = getEnglishMockForDate(currentDayPlan.date, englishWeeks);
 
+  const { weekPlan: currentPoliticsWeek, status: politicsWeekStatus } = getPoliticsWeekForDate(
+    currentDayPlan.date,
+    politicsWeeks
+  );
+
   const getCurrentTabNoteValue = (tab: DashboardNoteTab): string => {
     if (tab === 'english') {
       return currentEnglishWeek.weeklyNote || '';
+    }
+    if (tab === 'politics') {
+      return currentPoliticsWeek.weeklyNote || '';
     }
     return getIsolatedNoteForSubject(currentDayPlan, tab);
   };
@@ -339,10 +364,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     currentDayPlan.date,
     currentDayPlan.mathNote,
     currentDayPlan.csNote,
-    currentDayPlan.politicsNote,
     currentDayPlan.dailyNote,
     currentEnglishWeek.id,
     currentEnglishWeek.weeklyNote,
+    currentPoliticsWeek.id,
+    currentPoliticsWeek.weeklyNote,
   ]);
 
   const nextQuote = () => {
@@ -352,6 +378,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const handleSaveNote = () => {
     if (activeNoteTab === 'english') {
       onSaveEnglishWeekNote(currentEnglishWeek.id, noteContent);
+    } else if (activeNoteTab === 'politics') {
+      onSavePoliticsWeekNote(currentPoliticsWeek.id, noteContent);
     } else {
       onSaveSubjectNote(currentDayPlan.date, activeNoteTab, noteContent);
     }
@@ -369,16 +397,30 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const completedCsTasks = allPlans.filter((p) => p.csTask?.isCompleted).length;
   const csPercent = totalCsTasks > 0 ? Math.round((completedCsTasks / totalCsTasks) * 100) : 0;
 
-  const corePoliticsPlans = allPlans.filter(
-    (p) => p.date >= '2026-10-30' && p.date <= '2026-12-18'
+  // Politics 7-Week stats
+  const totalPoliticsSubTasks = politicsWeeks.reduce((acc, w) => acc + w.subTasks.length, 0);
+  const completedPoliticsSubTasks = politicsWeeks.reduce(
+    (acc, w) => acc + w.subTasks.filter((t) => t.isCompleted).length,
+    0
   );
-  const totalPoliticsTasks = corePoliticsPlans.length;
-  const completedPoliticsTasks = corePoliticsPlans.filter((p) => p.politicsTask?.isCompleted).length;
   const politicsPercent =
-    totalPoliticsTasks > 0
-      ? Math.round((completedPoliticsTasks / totalPoliticsTasks) * 100)
+    totalPoliticsSubTasks > 0
+      ? Math.round((completedPoliticsSubTasks / totalPoliticsSubTasks) * 100)
       : 0;
 
+  const currentPoliticsWeekTotalSub = currentPoliticsWeek.subTasks.length;
+  const currentPoliticsWeekDoneSub = currentPoliticsWeek.subTasks.filter((t) => t.isCompleted).length;
+  const currentPoliticsWeekPct =
+    currentPoliticsWeekTotalSub > 0
+      ? Math.round((currentPoliticsWeekDoneSub / currentPoliticsWeekTotalSub) * 100)
+      : 0;
+
+  const currentPoliticsWeekTotalAcc = currentPoliticsWeek.acceptanceCriteria.length;
+  const currentPoliticsWeekDoneAcc = currentPoliticsWeek.acceptanceCriteria.filter(
+    (a) => a.isCompleted
+  ).length;
+
+  // English 7-Week stats
   const totalEnglishSubTasks = englishWeeks.reduce((acc, w) => acc + w.subTasks.length, 0);
   const completedEnglishSubTasks = englishWeeks.reduce(
     (acc, w) => acc + w.subTasks.filter((t) => t.isCompleted).length,
@@ -389,7 +431,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       ? Math.round((completedEnglishSubTasks / totalEnglishSubTasks) * 100)
       : 0;
 
-  // Current week English progress
   const currentWeekTotalSub = currentEnglishWeek.subTasks.length;
   const currentWeekDoneSub = currentEnglishWeek.subTasks.filter((t) => t.isCompleted).length;
   const currentWeekPct =
@@ -405,7 +446,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       case 'english':
         return 'bg-teal-500/20 text-teal-300 border border-teal-500/40';
       case 'politics':
-        return 'bg-red-500/10 text-red-300/90 border border-red-500/20';
+        return 'bg-rose-500/15 text-rose-300 border border-rose-500/30';
       default:
         return 'bg-slate-800 text-slate-300 border border-slate-700';
     }
@@ -473,19 +514,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all hover:border-slate-700">
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>政治《肖八》接战 (11.10)</span>
-            <span className="font-mono text-indigo-400 font-semibold">模拟卷上市</span>
+            <span>政治《肖八》一轮 (11.10)</span>
+            <span className="font-mono text-rose-400 font-semibold">7周动态</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-indigo-400">
+            <span className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-rose-400">
               {daysToXiao8 > 0 ? daysToXiao8 : '已开战'}
             </span>
             <span className="text-xs text-slate-400">
-              {daysToXiao8 > 0 ? '天后全面停刷1000题' : '（肖八/肖四四阶段推进）'}
+              {daysToXiao8 > 0 ? '天后启动肖八第一轮' : '（肖八两轮→肖四主观题）'}
             </span>
           </div>
           <p className="text-[11px] text-slate-500 mt-2 truncate">
-            现阶段严控45-60分/天刷核心错题，肖八到手轮刷选择题
+            第1周马原+四大线索 → 第2-3周肖八两轮 → 第5-7周肖四背诵
           </p>
         </div>
 
@@ -506,7 +547,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
       </section>
 
-      {/* 3. Four-Subject Progress Meters (Math 2, 408, English Weekly, Politics) */}
+      {/* 3. Four-Subject Progress Meters (Math 2 Daily, 408 Daily, Politics Weekly, English Weekly) */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Math 2 Status */}
         <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
@@ -514,7 +555,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
               <h3 className="text-sm font-semibold text-white">
-                数学二 (150分) · 53天真题与全真模考决战
+                数学二 (150分) · 53天真题与全真模考决战 (按日)
               </h3>
             </div>
             <span className="text-xs font-mono tabular-nums text-amber-400 font-bold">
@@ -546,7 +587,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
               <h3 className="text-sm font-semibold text-white">
-                408 计算机专业课 (150分) · 74天全景特种兵
+                408 计算机专业课 (150分) · 74天全景特种兵 (按日)
               </h3>
             </div>
             <span className="text-xs font-mono tabular-nums text-cyan-400 font-bold">
@@ -572,13 +613,57 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
         </div>
 
+        {/* Politics Status (Weekly Structure) */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+              <h3 className="text-sm font-semibold text-white">
+                考研政治 (100分) · 7周动态规划与肖八/肖四攻坚 (按周)
+              </h3>
+            </div>
+            <span className="text-xs font-mono tabular-nums text-rose-300 font-bold">
+              {completedPoliticsSubTasks} / {totalPoliticsSubTasks} 项完成 ({politicsPercent}%)
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
+            <div
+              className="h-full bg-rose-400 transition-all duration-300"
+              style={{
+                width: `${(completedPoliticsSubTasks / Math.max(totalPoliticsSubTasks, 1)) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 space-y-1">
+            <p className="flex items-center justify-between gap-2">
+              <span>
+                <strong className="text-rose-300">
+                  本周进度 (第{currentPoliticsWeek.weekNumber}周 {currentPoliticsWeek.dateRange})：
+                </strong>
+                <span className="text-slate-200 font-medium">
+                  任务 {currentPoliticsWeekDoneSub}/{currentPoliticsWeekTotalSub} 项 ({currentPoliticsWeekPct}%) · 验收 {currentPoliticsWeekDoneAcc}/{currentPoliticsWeekTotalAcc}
+                </span>
+              </span>
+              <button
+                onClick={onNavigateToPoliticsTimeline}
+                className="text-rose-300 hover:text-rose-200 underline underline-offset-2 text-[11px] shrink-0 cursor-pointer"
+              >
+                7周视图 →
+              </button>
+            </p>
+            <p className="text-slate-500">
+              纪律：第1周恢复基础(马原+四大线索) → 第2-3周肖八两轮 → 第4周选择巩固 → 第5-7周肖四背诵。
+            </p>
+          </div>
+        </div>
+
         {/* English II Status (Weekly Structure) */}
         <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-teal-400" />
               <h3 className="text-sm font-semibold text-white">
-                考研英语二 (100分) · 7周全题型与三轮全真模考
+                考研英语二 (100分) · 7周全题型与三轮全真模考 (按周)
               </h3>
             </div>
             <span className="text-xs font-mono tabular-nums text-teal-300 font-bold">
@@ -612,40 +697,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </p>
             <p className="text-slate-500">
               纪律：作文-石磊鹏 · 翻译-唐静 · 完型-易熙人 · 新题型-刘琦；模考日 11.22 / 12.06 / 12.13。
-            </p>
-          </div>
-        </div>
-
-        {/* Politics Status */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-              <h3 className="text-sm font-semibold text-white">
-                考研政治 (100分) · 4阶段节奏联动推进
-              </h3>
-            </div>
-            <span className="text-xs font-mono tabular-nums text-rose-400 font-bold">
-              {completedPoliticsTasks} / {totalPoliticsTasks} 天完成 ({politicsPercent}%)
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
-            <div
-              className="h-full bg-rose-400 transition-all duration-300"
-              style={{
-                width: `${(completedPoliticsTasks / Math.max(totalPoliticsTasks, 1)) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="text-xs text-slate-400 space-y-1">
-            <p>
-              <strong className="text-rose-300">今日主攻：</strong>
-              <span className="text-slate-200 font-medium">
-                {currentDayPlan.politicsTask.title}
-              </span>
-            </p>
-            <p className="text-slate-500">
-              纪律：恢复知识框架(10.30-11.5) → 肖八一轮(11.6-11.21) → 巩固选择 → 肖四背诵(12.1-18)。
             </p>
           </div>
         </div>
@@ -875,15 +926,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
       </section>
 
-      {/* 5. Today's Action Checklist (Including Weekly English Progress Card) */}
+      {/* 5. Today's Action Checklist (Daily Math II + 408 & Weekly Politics + English) */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <BookMarked className="h-4 w-4 text-amber-400" />
             <h2 className="text-base font-bold text-white">
               {currentDayPlan.date === todayDateStr
-                ? "今日落地作战清单 (Today's Directives)"
-                : `${currentDayPlan.formattedDate} 作战清单`}
+                ? "今日日任务 & 本周动态作战清单 (Today & This Week's Directives)"
+                : `${currentDayPlan.formattedDate} 日任务 & 当周清单`}
             </h2>
             {currentDayPlan.date === todayDateStr && (
               <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">
@@ -901,10 +952,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <button
               onClick={() => onOpenEditModal(currentDayPlan)}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-200 bg-slate-800/90 hover:bg-slate-700/90 hover:text-white border border-slate-700 transition-all cursor-pointer shadow-xs active:scale-95"
-              title="自定义与修改此日日程（数二、408、政治）"
+              title="自定义与修改此日日程（数二、408）"
             >
               <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-              <span>调整今日日程</span>
+              <span>调整今日数二/408</span>
             </button>
             <span className="text-xs text-amber-300/90 hidden sm:flex items-center gap-1 font-medium">
               <span>完成代办即刻绽放礼炮 🎆</span>
@@ -913,7 +964,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Math 2 Task Card */}
+          {/* Math 2 Daily Task Card */}
           {currentDayPlan.math2Task && (
             <div
               className={`rounded-xl border p-4 transition-colors ${
@@ -934,7 +985,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   )}
                   <div>
                     <span className="text-xs font-mono font-medium text-amber-400">
-                      [数学二] {currentDayPlan.math2Task.phase}
+                      [数学二 · 按日攻坚] {currentDayPlan.math2Task.phase}
                     </span>
                     <h3
                       className={`text-sm font-semibold text-white ${
@@ -1008,7 +1059,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
           )}
 
-          {/* 408 Task Card */}
+          {/* 408 Daily Task Card */}
           {currentDayPlan.csTask && (
             <div
               className={`rounded-xl border p-4 transition-colors ${
@@ -1029,7 +1080,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   )}
                   <div>
                     <span className="text-xs font-mono font-medium text-cyan-400">
-                      [408专业课] {currentDayPlan.csTask.phase}
+                      [408专业课 · 按日攻坚] {currentDayPlan.csTask.phase}
                     </span>
                     <h3
                       className={`text-sm font-semibold text-white ${
@@ -1088,6 +1139,172 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               </div>
             </div>
           )}
+
+          {/* Weekly Politics Dynamic Progress Card (Synced to Current Selected Date's Week) */}
+          <div
+            className={`rounded-xl border p-4 transition-colors ${
+              currentPoliticsWeekTotalSub > 0 &&
+              currentPoliticsWeekDoneSub === currentPoliticsWeekTotalSub
+                ? 'border-emerald-800/60 bg-emerald-950/20'
+                : 'border-rose-500/30 bg-slate-900/60'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-mono font-bold text-rose-300 flex items-center gap-1">
+                    <BookOpen className="h-3.5 w-3.5 text-rose-400" />
+                    <span>
+                      [考研政治 · 按周动态推进] 第{currentPoliticsWeek.weekNumber}周 (
+                      {currentPoliticsWeek.dateRange})
+                    </span>
+                  </span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                    {currentPoliticsWeek.phaseTitle}
+                  </span>
+                  {politicsWeekStatus === 'pre' && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-800 text-slate-300">
+                      11.3启动第1周
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-sm font-semibold text-white mt-0.5">
+                  {currentPoliticsWeek.title}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[11px] font-mono text-rose-300 font-bold tabular-nums bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                  {currentPoliticsWeekDoneSub}/{currentPoliticsWeekTotalSub} 项 ({currentPoliticsWeekPct}%)
+                </span>
+                <button
+                  onClick={() => onOpenPoliticsWeekEditModal(currentPoliticsWeek)}
+                  className="p-1 rounded text-slate-400 hover:text-rose-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="动态编辑本周政治任务与验收标准"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Progress bar for the current Politics week */}
+            <div className="h-1.5 w-full rounded-full bg-slate-950 overflow-hidden border border-slate-800 mb-3">
+              <div
+                className="h-full bg-rose-400 transition-all duration-300"
+                style={{ width: `${currentPoliticsWeekPct}%` }}
+              />
+            </div>
+
+            {/* Input / Output summary strip */}
+            <div className="mb-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 p-2 text-[11px] text-slate-300 space-y-1">
+              <div>
+                <strong className="text-rose-300">📥 输入主线：</strong>
+                <span>{currentPoliticsWeek.inputFocus}</span>
+              </div>
+              <div>
+                <strong className="text-amber-300">📤 输出主线：</strong>
+                <span>{currentPoliticsWeek.outputFocus}</span>
+              </div>
+            </div>
+
+            {/* Interactive Split Sub-Task Checkboxes right on the Dashboard */}
+            <div className="space-y-2.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {currentPoliticsWeek.subTasks.map((sub) => {
+                  const catMeta = POLITICS_CATEGORY_LABELS[sub.category];
+                  return (
+                    <div
+                      key={sub.id}
+                      onClick={() => onTogglePoliticsSubTask(currentPoliticsWeek.id, sub.id)}
+                      className={`rounded-lg border p-2 flex items-start gap-2 cursor-pointer transition-all select-none ${
+                        sub.isCompleted
+                          ? 'border-emerald-800/50 bg-emerald-950/20 text-slate-400'
+                          : sub.category === 'xiao4_essay'
+                          ? 'border-fuchsia-500/40 bg-fuchsia-950/20 hover:border-fuchsia-500/60'
+                          : 'border-slate-800 bg-slate-950/70 hover:border-rose-500/50'
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {sub.isCompleted ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-slate-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span
+                            className={`text-[9px] font-mono px-1 py-0.1 rounded border ${catMeta.badgeClass}`}
+                          >
+                            {sub.moduleName}
+                          </span>
+                          <span
+                            className={`font-semibold text-[11px] leading-snug ${
+                              sub.isCompleted ? 'line-through text-slate-400' : 'text-slate-100'
+                            }`}
+                          >
+                            {sub.title}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Compact Interactive Weekly Acceptance Criteria on Dashboard */}
+              {currentPoliticsWeek.acceptanceCriteria.length > 0 && (
+                <div className="rounded-lg bg-amber-950/15 border border-amber-500/30 p-2.5 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-amber-300 flex items-center gap-1">
+                      <ClipboardCheck className="h-3.5 w-3.5 text-amber-400" />
+                      <span>本周验收标准清单</span>
+                    </span>
+                    <span className="font-mono text-amber-300 tabular-nums">
+                      已达标 {currentPoliticsWeekDoneAcc}/{currentPoliticsWeekTotalAcc}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {currentPoliticsWeek.acceptanceCriteria.map((acc) => (
+                      <div
+                        key={acc.id}
+                        onClick={() => onTogglePoliticsAcceptance(currentPoliticsWeek.id, acc.id)}
+                        className={`rounded border px-2 py-1 flex items-center gap-1.5 cursor-pointer text-[11px] select-none ${
+                          acc.isCompleted
+                            ? 'border-emerald-800/50 bg-emerald-950/20 text-slate-400 line-through'
+                            : 'border-slate-800 bg-slate-950/70 text-slate-200 hover:border-amber-500/40'
+                        }`}
+                      >
+                        {acc.isCompleted ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <Circle className="h-3.5 w-3.5 text-amber-400/70 shrink-0" />
+                        )}
+                        <span className="truncate">{acc.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-1 text-[11px]">
+                <button
+                  onClick={() => onOpenPoliticsWeekEditModal(currentPoliticsWeek)}
+                  className="text-slate-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  <span>动态编辑本周政治清单</span>
+                </button>
+                <button
+                  onClick={onNavigateToPoliticsTimeline}
+                  className="text-rose-300 hover:text-rose-200 font-semibold underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>进入政治7周完整日程表</span>
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Weekly English Progress Card (Synced to Current Selected Date's Week) */}
           <div
@@ -1227,105 +1444,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Politics Routine Card */}
-          <div
-            className={`rounded-xl border p-4 transition-colors ${
-              currentDayPlan.politicsTask.isCompleted
-                ? 'border-emerald-800/60 bg-emerald-950/20'
-                : 'border-red-500/20 bg-slate-900/60'
-            }`}
-          >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <button
-                onClick={() => onTogglePoliticsComplete?.(currentDayPlan.date)}
-                className="flex items-center gap-2 text-left group cursor-pointer"
-              >
-                {currentDayPlan.politicsTask.isCompleted ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                ) : (
-                  <Circle className="h-5 w-5 text-slate-500 group-hover:text-red-400/80 shrink-0" />
-                )}
-                <div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-mono font-medium text-red-300/80">
-                      [考研政治]{' '}
-                      {currentDayPlan.politicsDetail?.phaseTitle
-                        ? `· ${currentDayPlan.politicsDetail.phaseTitle}`
-                        : ''}
-                    </span>
-                    {currentDayPlan.politicsDetail?.dayTypeLabel && (
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-red-500/10 text-red-300/90 border border-red-500/20 font-semibold">
-                        {currentDayPlan.politicsDetail.dayTypeLabel}
-                      </span>
-                    )}
-                  </div>
-                  <h3
-                    className={`text-sm font-semibold text-white mt-0.5 ${
-                      currentDayPlan.politicsTask.isCompleted ? 'line-through text-slate-400' : ''
-                    }`}
-                  >
-                    {currentDayPlan.politicsTask.title}
-                  </h3>
-                </div>
-              </button>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[11px] font-mono text-slate-400">
-                  {currentDayPlan.politicsDetail?.durationRange ||
-                    `${currentDayPlan.politicsTask.durationMinutes} 分钟`}
-                </span>
-                <button
-                  onClick={() => onOpenEditModal(currentDayPlan, 'politics')}
-                  className="p-1 rounded text-slate-400 hover:text-red-300 hover:bg-slate-800 transition-colors cursor-pointer"
-                  title="修改今日政治任务"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="rounded-lg bg-slate-950/60 p-2.5 border border-slate-800/80">
-                <span className="text-amber-400 font-medium">🎯 今日任务目标：</span>
-                <p className="text-slate-300 mt-0.5 font-normal leading-relaxed">
-                  {currentDayPlan.politicsDetail?.goal || currentDayPlan.politicsTask.action}
-                </p>
-              </div>
-
-              {currentDayPlan.politicsDetail?.steps &&
-                currentDayPlan.politicsDetail.steps.length > 0 && (
-                  <div className="space-y-1.5">
-                    <span className="text-[11px] text-slate-400 font-medium">执行节奏拆解：</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                      {currentDayPlan.politicsDetail.steps.map((st, i) => (
-                        <div
-                          key={i}
-                          className="rounded bg-slate-950/50 p-2 border border-slate-800/70 text-[11px] space-y-0.5"
-                        >
-                          <div className="flex items-center justify-between text-red-300/90 font-semibold">
-                            <span>{st.title}</span>
-                            <span className="text-amber-400 font-mono text-[10px]">
-                              {st.duration}
-                            </span>
-                          </div>
-                          <p className="text-slate-400 text-[10px] leading-relaxed line-clamp-2">
-                            {st.detail}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {currentDayPlan.politicsDetail?.keyDirectives &&
-                currentDayPlan.politicsDetail.keyDirectives.length > 0 && (
-                  <div className="text-[11px] text-red-300/80 bg-red-950/20 p-2 rounded border border-red-900/30">
-                    <span className="text-red-400/80 font-semibold">执行纪律：</span>
-                    {currentDayPlan.politicsDetail.keyDirectives.join('；')}
-                  </div>
-                )}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1337,7 +1455,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="flex items-center gap-2">
               <StickyNote className="h-4 w-4 text-amber-400" />
               <h3 className="text-sm font-semibold text-white">
-                四科独立战地复盘笔记（各科彻底隔离）
+                四科独立战地复盘笔记（数二/408按日 · 政治/英语按周，彻底隔离）
               </h3>
             </div>
             {isNoteSaved && (
@@ -1396,8 +1514,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   : 'text-slate-300 hover:text-rose-300'
               }`}
             >
-              <span>📕 政治日笔记</span>
-              {Boolean(getIsolatedNoteForSubject(currentDayPlan, 'politics').trim()) && (
+              <span>📕 政治第{currentPoliticsWeek.weekNumber}周记</span>
+              {Boolean(currentPoliticsWeek.weeklyNote?.trim()) && (
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     activeNoteTab === 'politics' ? 'bg-white' : 'bg-rose-400'
@@ -1432,12 +1550,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             placeholder={
               activeNoteTab === 'english'
                 ? `正在编辑【英语二 · 第${currentEnglishWeek.weekNumber}周 (${currentEnglishWeek.dateRange}) 独立周记】...（仅在英语视图展示，不串入其他科目）`
+                : activeNoteTab === 'politics'
+                ? `正在编辑【考研政治 · 第${currentPoliticsWeek.weekNumber}周 (${currentPoliticsWeek.dateRange}) 独立周记】...（仅在政治视图展示，不串入其他科目）`
                 : `正在编辑【${currentDayPlan.formattedDate} · ${
-                    activeNoteTab === 'math'
-                      ? '数学二'
-                      : activeNoteTab === 'cs'
-                      ? '408专业课'
-                      : '考研政治'
+                    activeNoteTab === 'math' ? '数学二' : '408专业课'
                   }专属日笔记】...（与其他科目彻底隔离）`
             }
             className="w-full h-24 rounded-lg border border-slate-800 bg-slate-950/80 p-3 text-xs text-slate-200 placeholder:text-slate-500 focus:border-amber-400 focus:outline-none leading-relaxed"
@@ -1447,12 +1563,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <span className="text-slate-400 text-[11px]">
               {activeNoteTab === 'english'
                 ? `当前归属：英语第${currentEnglishWeek.weekNumber}周独立周记`
+                : activeNoteTab === 'politics'
+                ? `当前归属：政治第${currentPoliticsWeek.weekNumber}周独立周记`
                 : `当前归属：${currentDayPlan.formattedDate} ${
-                    activeNoteTab === 'math'
-                      ? '数学二'
-                      : activeNoteTab === 'cs'
-                      ? '408专业课'
-                      : '考研政治'
+                    activeNoteTab === 'math' ? '数学二' : '408专业课'
                   }独立日笔记`}
             </span>
             <button
@@ -1464,11 +1578,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 保存
                 {activeNoteTab === 'english'
                   ? `第${currentEnglishWeek.weekNumber}周英语周记`
+                  : activeNoteTab === 'politics'
+                  ? `第${currentPoliticsWeek.weekNumber}周政治周记`
                   : activeNoteTab === 'math'
                   ? '数二日笔记'
-                  : activeNoteTab === 'cs'
-                  ? '408日笔记'
-                  : '政治日笔记'}
+                  : '408日笔记'}
               </span>
             </button>
           </div>

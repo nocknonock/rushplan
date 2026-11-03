@@ -196,47 +196,25 @@ export const DayScheduleEditModal: React.FC<DayScheduleEditModalProps> = ({
           <div className="flex items-center gap-1.5 p-1 bg-slate-950/70 rounded-xl border border-slate-800">
             <button
               onClick={() => setActiveTab('math2')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'math2'
                   ? 'bg-amber-500/20 text-amber-200 border border-amber-500/40 shadow-sm shadow-amber-950/40'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>数学二</span>
+              <span>数学二 (按日任务)</span>
             </button>
             <button
               onClick={() => setActiveTab('cs')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'cs'
                   ? 'bg-cyan-500/20 text-cyan-200 border border-cyan-500/40 shadow-sm shadow-cyan-950/40'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
               <Cpu className="w-3.5 h-3.5" />
-              <span>408 计算机</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('english')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                activeTab === 'english'
-                  ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/40 shadow-sm shadow-emerald-950/40'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <BookmarkCheck className="w-3.5 h-3.5" />
-              <span>英语</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('politics')}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                activeTab === 'politics'
-                  ? 'bg-red-500/20 text-red-200 border border-red-500/40 shadow-sm shadow-red-950/40'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-              }`}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>政治</span>
+              <span>408 计算机 (按日任务)</span>
             </button>
           </div>
 

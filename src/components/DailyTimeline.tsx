@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DayPlan, EnglishWeekPlan, NoteSubjectTrack } from '../types/kaoyan';
+import { DayPlan, EnglishWeekPlan, PoliticsWeekPlan, NoteSubjectTrack } from '../types/kaoyan';
 import { SUBSEQUENT_PHASES } from '../data/scheduleData';
 import {
   ENGLISH_TIME_ALLOCATION,
@@ -8,6 +8,12 @@ import {
   ENGLISH_CATEGORY_LABELS,
   getEnglishWeekForDate,
 } from '../data/englishScheduleData';
+import {
+  POLITICS_FLEXIBLE_STUDY_DAYS,
+  POLITICS_OVERALL_SUMMARIES,
+  POLITICS_CATEGORY_LABELS,
+  getPoliticsWeekForDate,
+} from '../data/politicsScheduleData';
 import {
   CheckCircle2,
   Circle,
@@ -30,7 +36,7 @@ import {
   Target,
   Languages,
   CalendarRange,
-  AlertCircle,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export type TimelineTrackType = 'math' | 'cs' | 'politics' | 'english' | 'all';
@@ -38,9 +44,11 @@ export type TimelineTrackType = 'math' | 'cs' | 'politics' | 'english' | 'all';
 interface DailyTimelineProps {
   plans: DayPlan[];
   englishWeeks: EnglishWeekPlan[];
+  politicsWeeks: PoliticsWeekPlan[];
   selectedDate: string;
   todayDateStr?: string;
   initialTrack?: TimelineTrackType;
+  jumpTrigger?: number;
   onSelectDay: (date: string) => void;
   onJumpToToday?: () => void;
   onToggleMathComplete: (taskId: string) => void;
@@ -48,34 +56,34 @@ interface DailyTimelineProps {
   onToggleEnglishComplete?: (date: string) => void;
   onTogglePoliticsComplete?: (date: string) => void;
   onToggleEnglishSubTask?: (weekId: string, subTaskId: string) => void;
+  onTogglePoliticsSubTask?: (weekId: string, subTaskId: string) => void;
+  onTogglePoliticsAcceptance?: (weekId: string, criteriaId: string) => void;
   onSaveSubjectNote?: (date: string, subject: NoteSubjectTrack, note: string) => void;
   onSaveEnglishWeekNote?: (weekId: string, note: string) => void;
+  onSavePoliticsWeekNote?: (weekId: string, note: string) => void;
   onSaveDailyNote?: (date: string, note: string) => void;
   onOpenEditModal?: (plan: DayPlan, subjectTab?: 'math2' | 'cs' | 'english' | 'politics') => void;
   onOpenEnglishWeekEditModal?: (weekPlan: EnglishWeekPlan) => void;
+  onOpenPoliticsWeekEditModal?: (weekPlan: PoliticsWeekPlan) => void;
 }
 
-const SUBJECT_NOTE_META: Record<
-  NoteSubjectTrack,
+type DailyNoteSubjectTrack = 'math' | 'cs';
+
+const DAILY_SUBJECT_NOTE_META: Record<
+  DailyNoteSubjectTrack,
   { label: string; shortLabel: string; badgeClass: string; borderClass: string }
 > = {
   math: {
     label: '📐 数学二专属复盘笔记',
     shortLabel: '数二笔记',
     badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-    borderClass: 'border-l-amber-500 border-amber-500/30',
+    borderClass: 'border-amber-500/40',
   },
   cs: {
     label: '💻 408专业课专属复盘笔记',
     shortLabel: '408笔记',
     badgeClass: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-    borderClass: 'border-l-cyan-500 border-cyan-500/30',
-  },
-  politics: {
-    label: '📕 思想政治专属复盘笔记',
-    shortLabel: '政治笔记',
-    badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-    borderClass: 'border-l-rose-500 border-rose-500/30',
+    borderClass: 'border-cyan-500/40',
   },
 };
 
@@ -105,23 +113,29 @@ export function getIsolatedNoteTimestampForSubject(
 export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   plans,
   englishWeeks,
+  politicsWeeks,
   selectedDate,
   todayDateStr,
   initialTrack,
+  jumpTrigger = 0,
   onSelectDay,
   onJumpToToday,
   onToggleMathComplete,
   onToggleCsComplete,
-  onTogglePoliticsComplete,
   onToggleEnglishSubTask,
+  onTogglePoliticsSubTask,
+  onTogglePoliticsAcceptance,
   onSaveSubjectNote,
   onSaveEnglishWeekNote,
+  onSavePoliticsWeekNote,
   onSaveDailyNote,
   onOpenEditModal,
   onOpenEnglishWeekEditModal,
+  onOpenPoliticsWeekEditModal,
 }) => {
   // Primary Decoupled Track: 'math' | 'cs' | 'politics' | 'english' | 'all'
   const [viewTrack, setViewTrack] = useState<TimelineTrackType>(initialTrack || 'math');
+  const [scrollTrigger, setScrollTrigger] = useState<number>(0);
 
   React.useEffect(() => {
     if (initialTrack) {
@@ -129,31 +143,43 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     }
   }, [initialTrack]);
 
-  // Sub-phase filter for Math
-  const [mathPhaseFilter, setMathPhaseFilter] = useState<'all' | 'phase1' | 'phase2' | 'phase3' | 'exam'>('all');
+  // Sub-phase filter for Math (Daily)
+  const [mathPhaseFilter, setMathPhaseFilter] = useState<
+    'all' | 'phase1' | 'phase2' | 'phase3' | 'exam'
+  >('all');
 
-  // Sub-phase filter for CS
-  const [csPhaseFilter, setCsPhaseFilter] = useState<'all' | 'co' | 'os' | 'cn' | 'pastPapers' | 'exam'>('all');
+  // Sub-phase filter for CS (Daily)
+  const [csPhaseFilter, setCsPhaseFilter] = useState<
+    'all' | 'co' | 'os' | 'cn' | 'pastPapers' | 'exam'
+  >('all');
 
-  // Sub-phase filter for Politics
-  const [politicsPhaseFilter, setPoliticsPhaseFilter] = useState<'all' | 'phase1' | 'phase2' | 'phase3' | 'phase4'>('all');
+  // Sub-stage filter for Politics (Weekly View)
+  const [politicsStageFilter, setPoliticsStageFilter] = useState<
+    'all' | 'foundation_xiao8' | 'mcq_consolidate' | 'xiao4_sprint'
+  >('all');
 
   // Sub-stage filter for English (Weekly View)
-  const [englishStageFilter, setEnglishStageFilter] = useState<'all' | 'stage1' | 'stage2' | 'stage3' | 'stage4'>('all');
+  const [englishStageFilter, setEnglishStageFilter] = useState<
+    'all' | 'stage1' | 'stage2' | 'stage3' | 'stage4'
+  >('all');
 
   // Status Filter
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [filterNotesOnly, setFilterNotesOnly] = useState<boolean>(false);
   const [expandedDate, setExpandedDate] = useState<string | null>(selectedDate);
 
-  // Daily Subject Note Modal state (Strictly isolated by subject: math | cs | politics)
+  // Daily Subject Note Modal state (Strictly isolated by daily subject: math | cs)
   const [editingPlan, setEditingPlan] = useState<DayPlan | null>(null);
-  const [editingNoteSubject, setEditingNoteSubject] = useState<NoteSubjectTrack>('math');
+  const [editingNoteSubject, setEditingNoteSubject] = useState<DailyNoteSubjectTrack>('math');
   const [noteInput, setNoteInput] = useState<string>('');
 
   // Weekly English Note Modal state (Strictly isolated for English weeks)
   const [editingEnglishWeek, setEditingEnglishWeek] = useState<EnglishWeekPlan | null>(null);
   const [englishWeekNoteInput, setEnglishWeekNoteInput] = useState<string>('');
+
+  // Weekly Politics Note Modal state (Strictly isolated for Politics weeks)
+  const [editingPoliticsWeek, setEditingPoliticsWeek] = useState<PoliticsWeekPlan | null>(null);
+  const [politicsWeekNoteInput, setPoliticsWeekNoteInput] = useState<string>('');
 
   // Sync expanded card whenever selectedDate changes
   React.useEffect(() => {
@@ -162,16 +188,14 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     }
   }, [selectedDate]);
 
-  // Helper to check if a plan has a note for the currently active track
+  // Helper to check if a daily plan has a note for the currently active daily track
   const planHasNoteInTrack = (plan: DayPlan, track: TimelineTrackType): boolean => {
     if (track === 'math') return Boolean(getIsolatedNoteForSubject(plan, 'math').trim());
     if (track === 'cs') return Boolean(getIsolatedNoteForSubject(plan, 'cs').trim());
-    if (track === 'politics') return Boolean(getIsolatedNoteForSubject(plan, 'politics').trim());
     if (track === 'all') {
       return (
         Boolean(getIsolatedNoteForSubject(plan, 'math').trim()) ||
-        Boolean(getIsolatedNoteForSubject(plan, 'cs').trim()) ||
-        Boolean(getIsolatedNoteForSubject(plan, 'politics').trim())
+        Boolean(getIsolatedNoteForSubject(plan, 'cs').trim())
       );
     }
     return false;
@@ -180,23 +204,24 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   const notesCount =
     viewTrack === 'english'
       ? englishWeeks.filter((w) => w.weeklyNote && w.weeklyNote.trim().length > 0).length
+      : viewTrack === 'politics'
+      ? politicsWeeks.filter((w) => w.weeklyNote && w.weeklyNote.trim().length > 0).length
       : plans.filter((p) => planHasNoteInTrack(p, viewTrack)).length;
 
   const handleOpenNoteModal = (
     plan: DayPlan,
-    preferredSubject?: NoteSubjectTrack,
+    preferredSubject?: DailyNoteSubjectTrack,
     e?: React.MouseEvent
   ) => {
     e?.stopPropagation();
-    const targetSubj: NoteSubjectTrack =
-      preferredSubject ||
-      (viewTrack === 'cs' ? 'cs' : viewTrack === 'politics' ? 'politics' : 'math');
+    const targetSubj: DailyNoteSubjectTrack =
+      preferredSubject || (viewTrack === 'cs' ? 'cs' : 'math');
     setEditingPlan(plan);
     setEditingNoteSubject(targetSubj);
     setNoteInput(getIsolatedNoteForSubject(plan, targetSubj));
   };
 
-  const handleSwitchModalSubject = (subj: NoteSubjectTrack) => {
+  const handleSwitchModalSubject = (subj: DailyNoteSubjectTrack) => {
     if (!editingPlan) return;
     setEditingNoteSubject(subj);
     setNoteInput(getIsolatedNoteForSubject(editingPlan, subj));
@@ -214,7 +239,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
   const handleClearNote = () => {
     if (!editingPlan) return;
-    const subjLabel = SUBJECT_NOTE_META[editingNoteSubject].shortLabel;
+    const subjLabel = DAILY_SUBJECT_NOTE_META[editingNoteSubject].shortLabel;
     if (window.confirm(`确定要清空 ${editingPlan.formattedDate} 的【${subjLabel}】吗？`)) {
       if (onSaveSubjectNote) {
         onSaveSubjectNote(editingPlan.date, editingNoteSubject, '');
@@ -225,6 +250,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     }
   };
 
+  // English weekly note modal handlers
   const handleOpenEnglishWeekNoteModal = (week: EnglishWeekPlan, e?: React.MouseEvent) => {
     e?.stopPropagation();
     setEditingEnglishWeek(week);
@@ -242,6 +268,27 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     if (window.confirm(`确定要清空【第${editingEnglishWeek.weekNumber}周】的英语专属周记吗？`)) {
       onSaveEnglishWeekNote?.(editingEnglishWeek.id, '');
       setEditingEnglishWeek(null);
+    }
+  };
+
+  // Politics weekly note modal handlers
+  const handleOpenPoliticsWeekNoteModal = (week: PoliticsWeekPlan, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingPoliticsWeek(week);
+    setPoliticsWeekNoteInput(week.weeklyNote || '');
+  };
+
+  const handleSavePoliticsWeekNoteModal = () => {
+    if (!editingPoliticsWeek) return;
+    onSavePoliticsWeekNote?.(editingPoliticsWeek.id, politicsWeekNoteInput);
+    setEditingPoliticsWeek(null);
+  };
+
+  const handleClearPoliticsWeekNoteModal = () => {
+    if (!editingPoliticsWeek) return;
+    if (window.confirm(`确定要清空【第${editingPoliticsWeek.weekNumber}周】的政治专属周记吗？`)) {
+      onSavePoliticsWeekNote?.(editingPoliticsWeek.id, '');
+      setEditingPoliticsWeek(null);
     }
   };
 
@@ -263,16 +310,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     return 'co';
   };
 
-  // Helper to determine Politics task phase category
-  const getPoliticsCategory = (date: string) => {
-    if (date >= '2026-12-01') return 'phase4';
-    if (date >= '2026-11-22') return 'phase3';
-    if (date >= '2026-11-06') return 'phase2';
-    if (date >= '2026-10-30') return 'phase1';
-    return 'early';
-  };
-
-  // Filter daily plans based on active track and sub-filters
+  // Filter daily plans based on active track (math | cs | all)
   const filteredPlans = plans.filter((plan) => {
     if (filterNotesOnly && !planHasNoteInTrack(plan, viewTrack)) {
       return false;
@@ -305,24 +343,10 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
       return true;
     }
 
-    if (viewTrack === 'politics') {
-      const cat = getPoliticsCategory(plan.date);
-      if (politicsPhaseFilter === 'phase1' && cat !== 'phase1') return false;
-      if (politicsPhaseFilter === 'phase2' && cat !== 'phase2') return false;
-      if (politicsPhaseFilter === 'phase3' && cat !== 'phase3') return false;
-      if (politicsPhaseFilter === 'phase4' && cat !== 'phase4') return false;
-
-      const isPolDone = Boolean(plan.politicsTask?.isCompleted);
-      if (statusFilter === 'completed' && !isPolDone) return false;
-      if (statusFilter === 'pending' && isPolDone) return false;
-      return true;
-    }
-
-    // viewTrack === 'all'
+    // viewTrack === 'all' (Math II + 408 Daily Combined View)
     const mathDone = !plan.math2Task || plan.math2Task.isCompleted;
     const csDone = !plan.csTask || plan.csTask.isCompleted;
-    const polDone = !plan.politicsTask || plan.politicsTask.isCompleted;
-    const isAllDone = mathDone && csDone && polDone;
+    const isAllDone = mathDone && csDone;
 
     if (statusFilter === 'completed' && !isAllDone) return false;
     if (statusFilter === 'pending' && isAllDone) return false;
@@ -345,6 +369,21 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
     return true;
   });
 
+  // Filter Politics weekly plans when viewTrack === 'politics'
+  const filteredPoliticsWeeks = politicsWeeks.filter((week) => {
+    if (filterNotesOnly && (!week.weeklyNote || week.weeklyNote.trim().length === 0)) {
+      return false;
+    }
+    if (politicsStageFilter !== 'all' && week.stageGroup !== politicsStageFilter) {
+      return false;
+    }
+    const allSubTasksDone =
+      week.subTasks.length > 0 && week.subTasks.every((t) => t.isCompleted);
+    if (statusFilter === 'completed' && !allSubTasksDone) return false;
+    if (statusFilter === 'pending' && allSubTasksDone) return false;
+    return true;
+  });
+
   const toggleExpand = (date: string) => {
     setExpandedDate((prev) => (prev === date ? null : date));
   };
@@ -358,10 +397,24 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
   const completedCsDays = plans.filter((p) => p.csTask?.isCompleted).length;
   const csPercent = totalCsDays > 0 ? Math.round((completedCsDays / totalCsDays) * 100) : 0;
 
-  const corePoliticsPlans = plans.filter((p) => p.date >= '2026-10-30' && p.date <= '2026-12-18');
-  const totalPoliticsDays = corePoliticsPlans.length;
-  const completedPoliticsDays = corePoliticsPlans.filter((p) => p.politicsTask?.isCompleted).length;
-  const politicsPercent = totalPoliticsDays > 0 ? Math.round((completedPoliticsDays / totalPoliticsDays) * 100) : 0;
+  const totalPoliticsSubTasks = politicsWeeks.reduce((acc, w) => acc + w.subTasks.length, 0);
+  const completedPoliticsSubTasks = politicsWeeks.reduce(
+    (acc, w) => acc + w.subTasks.filter((t) => t.isCompleted).length,
+    0
+  );
+  const politicsPercent =
+    totalPoliticsSubTasks > 0
+      ? Math.round((completedPoliticsSubTasks / totalPoliticsSubTasks) * 100)
+      : 0;
+
+  const totalPoliticsAcc = politicsWeeks.reduce(
+    (acc, w) => acc + w.acceptanceCriteria.length,
+    0
+  );
+  const completedPoliticsAcc = politicsWeeks.reduce(
+    (acc, w) => acc + w.acceptanceCriteria.filter((a) => a.isCompleted).length,
+    0
+  );
 
   const totalEnglishSubTasks = englishWeeks.reduce((acc, w) => acc + w.subTasks.length, 0);
   const completedEnglishSubTasks = englishWeeks.reduce(
@@ -373,15 +426,181 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
       ? Math.round((completedEnglishSubTasks / totalEnglishSubTasks) * 100)
       : 0;
 
+  const effectiveToday = todayDateStr || selectedDate || '2026-11-03';
+
   const activeEnglishWeekId = getEnglishWeekForDate(
-    selectedDate || todayDateStr || '2026-11-03',
+    effectiveToday,
     englishWeeks
   ).weekPlan.id;
 
+  const activePoliticsWeekId = getPoliticsWeekForDate(
+    effectiveToday,
+    politicsWeeks
+  ).weekPlan.id;
+
+  // Switch between the 5 schedule tracks and automatically focus & scroll to today/current week
+  const handleSwitchTrack = (nextTrack: TimelineTrackType) => {
+    setStatusFilter('all');
+    setFilterNotesOnly(false);
+    setMathPhaseFilter('all');
+    setCsPhaseFilter('all');
+    setPoliticsStageFilter('all');
+    setEnglishStageFilter('all');
+    if (todayDateStr) {
+      onJumpToToday?.();
+      setExpandedDate(todayDateStr);
+    }
+    setViewTrack(nextTrack);
+    setScrollTrigger((prev) => prev + 1);
+  };
+
+  // Jump to today / current week button handler
+  const handleJumpToTodayClick = () => {
+    setStatusFilter('all');
+    setFilterNotesOnly(false);
+    setMathPhaseFilter('all');
+    setCsPhaseFilter('all');
+    setPoliticsStageFilter('all');
+    setEnglishStageFilter('all');
+    if (todayDateStr) {
+      onJumpToToday?.();
+      setExpandedDate(todayDateStr);
+    }
+    setScrollTrigger((prev) => prev + 1);
+  };
+
+  // Track whether the user has scrolled past the top track navigation bar
+  const topNavRef = React.useRef<HTMLDivElement | null>(null);
+  const [showFloatingRail, setShowFloatingRail] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    const checkScroll = () => {
+      if (topNavRef.current) {
+        const rect = topNavRef.current.getBoundingClientRect();
+        // Show floating rail once the top navigation bar scrolls mostly out of view
+        setShowFloatingRail(rect.bottom < 72 || window.scrollY > 200);
+      } else {
+        setShowFloatingRail(window.scrollY > 200);
+      }
+    };
+
+    checkScroll();
+    window.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, []);
+
+  // Auto-scroll to today's card (for daily schedules) or current week's card (for Politics/English weekly schedules)
+  // whenever opening the Schedule tab, switching schedule tracks, or clicking "Jump to Today"
+  React.useEffect(() => {
+    if (effectiveToday) {
+      setExpandedDate(effectiveToday);
+    }
+
+    const timer = window.setTimeout(() => {
+      let targetEl: HTMLElement | null = null;
+      if (viewTrack === 'politics') {
+        targetEl = document.getElementById(`timeline-politics-week-${activePoliticsWeekId}`);
+      } else if (viewTrack === 'english') {
+        targetEl = document.getElementById(`timeline-english-week-${activeEnglishWeekId}`);
+      } else {
+        targetEl = document.getElementById(`timeline-day-${effectiveToday}`);
+      }
+
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    viewTrack,
+    scrollTrigger,
+    jumpTrigger,
+    effectiveToday,
+    activePoliticsWeekId,
+    activeEnglishWeekId,
+  ]);
+
+  const floatingTrackItems: Array<{
+    track: TimelineTrackType;
+    emoji: string;
+    title: string;
+    activeClass: string;
+  }> = [
+    {
+      track: 'all',
+      emoji: '⚔️',
+      title: '数二+408同屏 (按日视图)',
+      activeClass:
+        'bg-emerald-500/25 border-emerald-400/80 shadow-md shadow-emerald-950/60 scale-105',
+    },
+    {
+      track: 'politics',
+      emoji: '📕',
+      title: '政治专属 (按周视图)',
+      activeClass: 'bg-rose-500/25 border-rose-400/80 shadow-md shadow-rose-950/60 scale-105',
+    },
+    {
+      track: 'english',
+      emoji: '📗',
+      title: '英语专属 (按周视图)',
+      activeClass: 'bg-teal-500/25 border-teal-400/80 shadow-md shadow-teal-950/60 scale-105',
+    },
+    {
+      track: 'math',
+      emoji: '📐',
+      title: '数学二专属 (按日)',
+      activeClass: 'bg-amber-500/25 border-amber-400/80 shadow-md shadow-amber-950/60 scale-105',
+    },
+    {
+      track: 'cs',
+      emoji: '💻',
+      title: '408专业课专属 (按日)',
+      activeClass: 'bg-cyan-500/25 border-cyan-400/80 shadow-md shadow-cyan-950/60 scale-105',
+    },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Compact Right-Side Emoji-Only Strip Navigation Bar when scrolled down */}
+      <nav
+        aria-label="科目快速切换侧边栏"
+        className={`fixed right-2.5 sm:right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 p-1.5 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800/90 shadow-2xl shadow-black/70 transition-all duration-300 ${
+          showFloatingRail
+            ? 'opacity-100 translate-x-0 pointer-events-auto'
+            : 'opacity-0 translate-x-6 pointer-events-none'
+        }`}
+      >
+        {floatingTrackItems.map((item) => {
+          const isActive = viewTrack === item.track;
+          return (
+            <button
+              key={item.track}
+              type="button"
+              onClick={() => handleSwitchTrack(item.track)}
+              title={item.title}
+              aria-label={item.title}
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center text-base leading-none select-none transition-all cursor-pointer ${
+                isActive
+                  ? item.activeClass
+                  : 'bg-slate-900/60 border-transparent opacity-65 hover:opacity-100 hover:bg-slate-800/90 hover:border-slate-700'
+              }`}
+            >
+              <span>{item.emoji}</span>
+            </button>
+          );
+        })}
+      </nav>
+
       {/* 1. Master Decoupled Track Navigation Bar */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-3 sm:p-4 shadow-xl">
+      <div
+        ref={topNavRef}
+        className="rounded-2xl border border-slate-800 bg-slate-900/90 p-3 sm:p-4 shadow-xl"
+      >
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           {/* Primary View Track Switcher */}
           <div className="flex flex-wrap items-center gap-2">
@@ -391,7 +610,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             </span>
             <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
               <button
-                onClick={() => setViewTrack('all')}
+                onClick={() => handleSwitchTrack('all')}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewTrack === 'all'
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-950/50 scale-[1.02]'
@@ -399,11 +618,32 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 }`}
               >
                 <Target className="h-3.5 w-3.5" />
-                <span>⚔️ 全科并列日视图</span>
+                <span>⚔️ 数二+408同屏 (按日视图)</span>
               </button>
 
               <button
-                onClick={() => setViewTrack('english')}
+                onClick={() => handleSwitchTrack('politics')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewTrack === 'politics'
+                    ? 'bg-rose-500 text-white shadow-md shadow-rose-950/50 scale-[1.02]'
+                    : 'text-slate-300 hover:text-rose-300 hover:bg-slate-900'
+                }`}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span>📕 政治专属 (按周视图)</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    viewTrack === 'politics'
+                      ? 'bg-slate-950/30 text-white'
+                      : 'bg-slate-800 text-rose-300'
+                  }`}
+                >
+                  7周动态
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleSwitchTrack('english')}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewTrack === 'english'
                     ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-950/50 scale-[1.02]'
@@ -424,28 +664,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               </button>
 
               <button
-                onClick={() => setViewTrack('politics')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  viewTrack === 'politics'
-                    ? 'bg-red-500/20 text-red-200 border border-red-500/40 shadow-sm shadow-red-950/40 scale-[1.02]'
-                    : 'text-slate-300 hover:text-red-300 hover:bg-slate-900'
-                }`}
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                <span>📕 政治专属</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                    viewTrack === 'politics'
-                      ? 'bg-red-950/60 text-red-300'
-                      : 'bg-slate-800 text-red-300/80'
-                  }`}
-                >
-                  4阶段
-                </span>
-              </button>
-
-              <button
-                onClick={() => setViewTrack('math')}
+                onClick={() => handleSwitchTrack('math')}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewTrack === 'math'
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-950/50 scale-[1.02]'
@@ -453,7 +672,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 }`}
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                <span>📐 数学二专属</span>
+                <span>📐 数学二专属 (按日)</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                     viewTrack === 'math'
@@ -466,7 +685,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               </button>
 
               <button
-                onClick={() => setViewTrack('cs')}
+                onClick={() => handleSwitchTrack('cs')}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewTrack === 'cs'
                     ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-950/50 scale-[1.02]'
@@ -474,7 +693,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 }`}
               >
                 <Cpu className="h-3.5 w-3.5" />
-                <span>💻 408专业课专属</span>
+                <span>💻 408专业课专属 (按日)</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                     viewTrack === 'cs'
@@ -492,19 +711,20 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             {todayDateStr && (
               <button
-                onClick={() => {
-                  onJumpToToday?.();
-                  setExpandedDate(todayDateStr);
-                }}
+                onClick={handleJumpToTodayClick}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
                   selectedDate === todayDateStr
-                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/30'
                     : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
                 }`}
-                title="快速聚焦到今日真实东八区战况"
+                title="一键自动滚动聚焦到今日真实东八区日程卡片 / 本周规划卡片"
               >
                 <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span>回到今日</span>
+                <span>
+                  {viewTrack === 'politics' || viewTrack === 'english'
+                    ? '定位本周'
+                    : '回到今日'}
+                </span>
               </button>
             )}
 
@@ -556,19 +776,194 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
               <span>
                 {viewTrack === 'english'
                   ? `有英语周记 (${notesCount})`
+                  : viewTrack === 'politics'
+                  ? `有政治周记 (${notesCount})`
                   : viewTrack === 'math'
                   ? `有数二笔记 (${notesCount})`
                   : viewTrack === 'cs'
                   ? `有408笔记 (${notesCount})`
-                  : viewTrack === 'politics'
-                  ? `有政治笔记 (${notesCount})`
                   : `有笔记 (${notesCount})`}
               </span>
             </button>
           </div>
         </div>
 
-        {/* 2. Track Specific Sub-Phase Bar & Header Information */}
+        {/* =============================================================== */}
+        {/* 2. Track Specific Sub-Phase Bar & Header Information            */}
+        {/* =============================================================== */}
+        {viewTrack === 'politics' && (
+          <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-bold text-rose-400">
+                    考研政治 · 最后阶段按周动态规划 (7大周次独立体系)
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">
+                    (11月3日—12月18日按周统筹：背诵手册上下册 + 肖八两轮 + 肖四主观题背诵)
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  采用与数二/408日计划解耦的「按套数/次数拆分子任务 + 每周验收标准核验 + 5+2弹性学习日 + 政治独立周记」动态架构！
+                </p>
+              </div>
+
+              {/* Sub-stage Filter Tabs for Politics */}
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <button
+                  onClick={() => setPoliticsStageFilter('all')}
+                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                    politicsStageFilter === 'all'
+                      ? 'bg-rose-500/20 text-rose-200 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  全部7周
+                </button>
+                <button
+                  onClick={() => setPoliticsStageFilter('foundation_xiao8')}
+                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                    politicsStageFilter === 'foundation_xiao8'
+                      ? 'bg-rose-500/20 text-rose-200 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  基础与肖八两轮 (第1-3周)
+                </button>
+                <button
+                  onClick={() => setPoliticsStageFilter('mcq_consolidate')}
+                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                    politicsStageFilter === 'mcq_consolidate'
+                      ? 'bg-rose-500/20 text-rose-200 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  选择题巩固 (第4周)
+                </button>
+                <button
+                  onClick={() => setPoliticsStageFilter('xiao4_sprint')}
+                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                    politicsStageFilter === 'xiao4_sprint'
+                      ? 'bg-rose-500/20 text-rose-200 font-bold border border-rose-500/40'
+                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
+                  }`}
+                >
+                  肖四背诵与冲刺 (第5-7周)
+                </button>
+              </div>
+            </div>
+
+            {/* Strategic Overview Grid: 7-Week Input/Output Roadmap + 5+2 Flexible Study Days */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-xs">
+              {/* Left 7 Cols: 7-Week Overall Input/Output Roadmap & Method Anchors */}
+              <div className="lg:col-span-7 rounded-xl bg-slate-950/90 border border-rose-500/25 p-3.5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <span className="font-bold text-rose-300 flex items-center gap-1.5">
+                    <CalendarRange className="h-4 w-4 text-rose-400" />
+                    <span>7周整体规划（输入页码定位 × 输出套卷节奏）</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-amber-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                    12月1日起：主观题背诵不再是可选任务
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {POLITICS_OVERALL_SUMMARIES.map((item) => (
+                    <div
+                      key={item.weekNumber}
+                      className="rounded-lg bg-slate-900/80 border border-slate-800/90 p-2.5 space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-rose-300 text-xs">
+                          第{item.weekNumber}周 · {item.phaseTitle}
+                        </span>
+                        <span className="font-mono text-[10px] text-amber-300 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800 shrink-0">
+                          {item.dateRange}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        <strong className="text-rose-300/90">输入：</strong>
+                        {item.inputLine}
+                      </p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        <strong className="text-amber-300/90">输出：</strong>
+                        {item.outputLine}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Method Anchors Banner */}
+                <div className="rounded-lg bg-rose-950/25 border border-rose-500/30 p-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span className="font-bold text-rose-300 block">
+                      ⚡ 肖八单套标准流（70～90分钟）：
+                    </span>
+                    <span className="text-slate-300">
+                      做题约 30～40m → 订正约 20m → 复盘定位手册约 20～30m
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-amber-300 block">
+                      🔥 肖四主观题两次学习 + 滚动背诵法：
+                    </span>
+                    <span className="text-slate-300">
+                      第1次理解结构背一半，第2次背剩余并回顾；每次先花10～15m回忆旧题
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right 5 Cols: 5+2 Flexible Weekly Study Day Allocation Guide */}
+              <div className="lg:col-span-5 rounded-xl bg-slate-950/90 border border-rose-500/25 p-3.5 flex flex-col justify-between space-y-2.5">
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2.5">
+                    <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 text-amber-400" />
+                      <span>一周 5+2 弹性学习日自由分配指南</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      5次正课 + 2个机动日
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {POLITICS_FLEXIBLE_STUDY_DAYS.map((d, i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg bg-slate-900/90 border border-slate-800 px-3 py-2 flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`font-mono text-xs font-bold px-2 py-0.5 rounded border ${
+                              d.dayLabel.includes('机动')
+                                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                                : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                            }`}
+                          >
+                            {d.dayLabel}
+                          </span>
+                          <span className="text-xs font-semibold text-slate-200">
+                            {d.arrangement}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                          {d.tag}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-400 bg-slate-900/70 px-2.5 py-2 rounded border border-slate-800/80 leading-relaxed">
+                  💡 <strong className="text-slate-200">使用建议：</strong>
+                  你可根据当周数学模考与408攻坚强度，把一周政治任务自由映射到上述 5 个学习日，预留 2 个机动日兜底补漏或轻量回忆。
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {viewTrack === 'english' && (
           <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -582,7 +977,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  采用与数二/408/政治日计划解耦的「周任务池 + 拆分打卡 + 独立周记」结构，每周多次任务可逐篇独立打钩并支持自由编辑！
+                  采用与数二/408日计划解耦的「周任务池 + 拆分打卡 + 独立周记」结构，每周多次任务可逐篇独立打钩并支持自由编辑！
                 </p>
               </div>
 
@@ -913,96 +1308,28 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
           </div>
         )}
 
-        {viewTrack === 'politics' && (
-          <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-3">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-rose-400">
-                    考研思想政治理论专项推进日程
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono">
-                    (恢复知识框架 10.30-11.5 + 肖八第一轮 11.6-11.21 + 巩固选择题 11.22-11.30 + 肖四背诵优先 12.1-12.18)
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  严密契合数学模考日/非模考日交替节奏，四阶段层层推进，政治专属笔记独立保存！
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <button
-                  onClick={() => setPoliticsPhaseFilter('all')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${
-                    politicsPhaseFilter === 'all'
-                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  全阶段
-                </button>
-                <button
-                  onClick={() => setPoliticsPhaseFilter('phase1')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${
-                    politicsPhaseFilter === 'phase1'
-                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  一阶段: 恢复知识框架 (10.30-11.5)
-                </button>
-                <button
-                  onClick={() => setPoliticsPhaseFilter('phase2')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${
-                    politicsPhaseFilter === 'phase2'
-                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  二阶段: 肖八第一轮 (11.6-11.21)
-                </button>
-                <button
-                  onClick={() => setPoliticsPhaseFilter('phase3')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${
-                    politicsPhaseFilter === 'phase3'
-                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  三阶段: 巩固选择题 (11.22-11.30)
-                </button>
-                <button
-                  onClick={() => setPoliticsPhaseFilter('phase4')}
-                  className={`px-2.5 py-1 rounded-md transition-colors ${
-                    politicsPhaseFilter === 'phase4'
-                      ? 'bg-red-500/15 text-red-200 font-bold border border-red-500/30'
-                      : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  四阶段: 肖四背诵优先 (12.1-12.18)
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {viewTrack === 'all' && (
           <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <span className="text-sm font-bold text-white">
-                全科多轨统筹推进大纲
+                按日双核攻坚视图（数学二 53天真题 + 408 全景）
               </span>
               <span className="text-xs text-slate-400 ml-2 font-mono">
-                (数二 53 天真题 + 408 全景 + 政治 4 阶段 + 英语 7 周冲刺)
+                (政治与英语已全面升级为独立按周动态规划视图)
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400">各科笔记已按科目严格隔离</span>
+            <div className="flex flex-wrap items-center gap-3 text-xs">
               <button
-                onClick={() => setViewTrack('english')}
+                onClick={() => handleSwitchTrack('politics')}
+                className="text-rose-300 hover:text-rose-200 underline underline-offset-2 font-semibold cursor-pointer"
+              >
+                前往政治7周视图 →
+              </button>
+              <button
+                onClick={() => handleSwitchTrack('english')}
                 className="text-teal-300 hover:text-teal-200 underline underline-offset-2 font-semibold cursor-pointer"
               >
-                前往英语按周视图 →
+                前往英语7周视图 →
               </button>
             </div>
           </div>
@@ -1010,6 +1337,28 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
         {/* Progress Bar Indicator */}
         <div className="mt-3 pt-3 border-t border-slate-800/60 flex items-center gap-4 text-xs">
+          {viewTrack === 'politics' && (
+            <div className="w-full flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 flex items-center gap-3">
+                <span className="text-slate-400 font-medium shrink-0">
+                  政治7周子任务进度:
+                </span>
+                <div className="flex-1 bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                  <div
+                    className="bg-rose-500 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${politicsPercent}%` }}
+                  />
+                </div>
+                <span className="font-mono text-rose-300 font-bold shrink-0 tabular-nums">
+                  {completedPoliticsSubTasks} / {totalPoliticsSubTasks} 项 ({politicsPercent}%)
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-amber-300 bg-slate-950 px-2.5 py-0.5 rounded border border-slate-800 shrink-0">
+                验收标准已核验：{completedPoliticsAcc} / {totalPoliticsAcc} 条
+              </span>
+            </div>
+          )}
+
           {viewTrack === 'english' && (
             <div className="w-full flex items-center gap-3">
               <span className="text-slate-400 font-medium shrink-0">
@@ -1057,25 +1406,10 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             </div>
           )}
 
-          {viewTrack === 'politics' && (
-            <div className="w-full flex items-center gap-3">
-              <span className="text-slate-400 font-medium shrink-0">政治攻坚进度 (10.30-12.18):</span>
-              <div className="flex-1 bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
-                <div
-                  className="bg-rose-500 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${politicsPercent}%` }}
-                />
-              </div>
-              <span className="font-mono text-rose-400 font-bold shrink-0 tabular-nums">
-                {completedPoliticsDays} / {totalPoliticsDays} 天 ({politicsPercent}%)
-              </span>
-            </div>
-          )}
-
           {viewTrack === 'all' && (
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-amber-400 font-medium shrink-0">数二:</span>
+                <span className="text-amber-400 font-medium shrink-0">数二(日):</span>
                 <div className="flex-1 bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
                   <div className="bg-amber-500 h-full" style={{ width: `${mathPercent}%` }} />
                 </div>
@@ -1084,7 +1418,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-cyan-400 font-medium shrink-0">408:</span>
+                <span className="text-cyan-400 font-medium shrink-0">408(日):</span>
                 <div className="flex-1 bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
                   <div className="bg-cyan-500 h-full" style={{ width: `${csPercent}%` }} />
                 </div>
@@ -1093,12 +1427,12 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-rose-400 font-medium shrink-0">政治:</span>
+                <span className="text-rose-400 font-medium shrink-0">政治(周):</span>
                 <div className="flex-1 bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
                   <div className="bg-rose-500 h-full" style={{ width: `${politicsPercent}%` }} />
                 </div>
                 <span className="font-mono text-slate-300 text-[11px] shrink-0 tabular-nums">
-                  {completedPoliticsDays}/{totalPoliticsDays}天
+                  {completedPoliticsSubTasks}/{totalPoliticsSubTasks}项
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -1116,9 +1450,341 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
       </div>
 
       {/* =================================================================== */}
-      {/* 2A. DEDICATED WEEKLY ENGLISH SCHEDULE VIEW (viewTrack === 'english') */}
+      {/* 2A-1. DEDICATED WEEKLY POLITICS SCHEDULE VIEW (viewTrack === 'politics') */}
       {/* =================================================================== */}
-      {viewTrack === 'english' ? (
+      {viewTrack === 'politics' ? (
+        <div className="space-y-4">
+          {filteredPoliticsWeeks.length === 0 && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-12 text-center text-slate-400">
+              <Filter className="h-8 w-8 mx-auto text-slate-600 mb-2" />
+              <p className="text-sm">当前筛选条件下暂无政治周规划卡片</p>
+              <p className="text-xs text-slate-500 mt-1">请尝试切换阶段标签或取消仅看周记筛选</p>
+            </div>
+          )}
+
+          {filteredPoliticsWeeks.map((week) => {
+            const totalSub = week.subTasks.length;
+            const doneSub = week.subTasks.filter((t) => t.isCompleted).length;
+            const weekPct = totalSub > 0 ? Math.round((doneSub / totalSub) * 100) : 0;
+
+            const totalAcc = week.acceptanceCriteria.length;
+            const doneAcc = week.acceptanceCriteria.filter((a) => a.isCompleted).length;
+
+            const isAllDone = totalSub > 0 && doneSub === totalSub;
+            const isCurrentWeek = week.id === activePoliticsWeekId;
+            const hasWeeklyNote = Boolean(week.weeklyNote && week.weeklyNote.trim().length > 0);
+
+            return (
+              <div
+                key={week.id}
+                id={`timeline-politics-week-${week.id}`}
+                className={`scroll-mt-20 rounded-2xl border transition-all overflow-hidden ${
+                  isCurrentWeek
+                    ? 'border-rose-500/80 bg-slate-900/95 shadow-lg shadow-rose-950/30'
+                    : isAllDone
+                    ? 'border-emerald-800/60 bg-slate-900/60'
+                    : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
+                }`}
+              >
+                {/* Week Card Header */}
+                <div className="p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/50 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div
+                      className={`flex flex-col items-center justify-center rounded-xl border px-3 py-2 shrink-0 min-w-[78px] text-center ${
+                        isCurrentWeek
+                          ? 'bg-rose-500/20 border-rose-500/50 text-rose-200'
+                          : 'bg-slate-900 border-slate-800 text-white'
+                      }`}
+                    >
+                      <span className="text-xs font-extrabold font-mono">
+                        第 {week.weekNumber} 周
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        {week.dateRange}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/30">
+                          {week.phaseTitle}
+                        </span>
+                        {isCurrentWeek && (
+                          <span className="text-[11px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">
+                            ★ 当前选中日期所属周
+                          </span>
+                        )}
+                        {week.weekNumber >= 5 && (
+                          <span className="text-[11px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                            <Flame className="h-3 w-3 text-amber-400" />
+                            肖四主观题背诵必选周
+                          </span>
+                        )}
+                        {week.isCustomized && (
+                          <span className="text-[10px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold">
+                            <Sparkles className="h-3 w-3 text-amber-400" />
+                            已定制
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-sm sm:text-base font-bold text-white">
+                        {week.title}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 leading-relaxed">
+                        <span>
+                          <strong className="text-rose-300">核心目标：</strong>
+                          {week.coreGoal}
+                        </span>
+                        {week.extraGoal && (
+                          <span>
+                            <strong className="text-amber-300">额外目标：</strong>
+                            {week.extraGoal}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Progress & Actions */}
+                  <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-center shrink-0">
+                    <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5">
+                      <div className="w-20 bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                        <div
+                          className="bg-rose-400 h-full transition-all duration-300"
+                          style={{ width: `${weekPct}%` }}
+                        />
+                      </div>
+                      <span className="font-mono text-xs font-bold text-rose-300 tabular-nums">
+                        {doneSub}/{totalSub} ({weekPct}%)
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={(e) => handleOpenPoliticsWeekNoteModal(week, e)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        hasWeeklyNote
+                          ? 'bg-rose-500/20 text-rose-200 border border-rose-500/50 hover:bg-rose-500/30'
+                          : 'bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                      }`}
+                    >
+                      {hasWeeklyNote ? (
+                        <>
+                          <BookmarkCheck className="h-3.5 w-3.5 text-rose-300" />
+                          <span>已记政治周记</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileEdit className="h-3.5 w-3.5 text-slate-400" />
+                          <span>记政治周记</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => onOpenPoliticsWeekEditModal?.(week)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-rose-500/50 text-xs font-semibold text-slate-200 hover:text-rose-300 transition-all cursor-pointer"
+                    >
+                      <Edit3 className="h-3.5 w-3.5 text-rose-400" />
+                      <span>编辑本周内容</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Week Body */}
+                <div className="p-4 sm:p-5 space-y-4 text-xs">
+                  {/* Input & Output Focus Dual Strip */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    <div className="rounded-xl bg-slate-950/80 border border-rose-500/25 p-3">
+                      <span className="text-[11px] font-bold text-rose-300 block mb-0.5">
+                        📥 本周输入主线（背诵手册精读 & 核心专题）
+                      </span>
+                      <p className="text-xs text-slate-200 leading-relaxed">{week.inputFocus}</p>
+                    </div>
+                    <div className="rounded-xl bg-slate-950/80 border border-amber-500/25 p-3">
+                      <span className="text-[11px] font-bold text-amber-300 block mb-0.5">
+                        📤 本周输出主线（肖八 / 肖四 / 小程序刷题）
+                      </span>
+                      <p className="text-xs text-slate-200 leading-relaxed">{week.outputFocus}</p>
+                    </div>
+                  </div>
+
+                  {/* Independent Split Sub-Task Checkboxes */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>本周模块拆分打卡清单（按套数/次数拆分，点击任意单项即可打卡）</span>
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-mono tabular-nums">
+                        已完成 {doneSub} / {totalSub} 项
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                      {week.subTasks.map((sub) => {
+                        const catMeta = POLITICS_CATEGORY_LABELS[sub.category];
+                        return (
+                          <div
+                            key={sub.id}
+                            onClick={() => onTogglePoliticsSubTask?.(week.id, sub.id)}
+                            className={`rounded-xl border p-3 flex items-start gap-2.5 cursor-pointer transition-all select-none group ${
+                              sub.isCompleted
+                                ? 'border-emerald-800/60 bg-emerald-950/20 text-slate-400'
+                                : sub.category === 'xiao4_essay'
+                                ? 'border-fuchsia-500/40 bg-fuchsia-950/15 hover:border-fuchsia-500/70'
+                                : 'border-slate-800 bg-slate-950/70 hover:border-rose-500/50 hover:bg-slate-950'
+                            }`}
+                          >
+                            <div className="mt-0.5 shrink-0">
+                              {sub.isCompleted ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                              ) : (
+                                <Circle className="h-4 w-4 text-slate-500 group-hover:text-rose-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                                <span
+                                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded border font-semibold ${catMeta.badgeClass}`}
+                                >
+                                  {sub.moduleName}
+                                </span>
+                                {sub.isCompleted && (
+                                  <span className="text-[10px] font-mono text-emerald-400 font-semibold">
+                                    ✓ 已完成
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                className={`font-bold text-xs leading-snug ${
+                                  sub.isCompleted ? 'line-through text-slate-400' : 'text-white'
+                                }`}
+                              >
+                                {sub.title}
+                              </div>
+                              {sub.detail && (
+                                <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                                  {sub.detail}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Interactive Weekly Acceptance Criteria Checklist */}
+                  {week.acceptanceCriteria.length > 0 && (
+                    <div className="rounded-xl border border-amber-500/35 bg-amber-950/15 p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-300 flex items-center gap-1.5">
+                          <ClipboardCheck className="h-4 w-4 text-amber-400" />
+                          <span>本周验收标准清单（周末对照逐条自检打钩）</span>
+                        </span>
+                        <span className="text-[11px] font-mono text-amber-300 font-bold tabular-nums">
+                          已达标 {doneAcc} / {totalAcc} 条
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {week.acceptanceCriteria.map((acc) => (
+                          <div
+                            key={acc.id}
+                            onClick={() => onTogglePoliticsAcceptance?.(week.id, acc.id)}
+                            className={`rounded-lg border px-3 py-2 flex items-center gap-2.5 cursor-pointer transition-all select-none ${
+                              acc.isCompleted
+                                ? 'border-emerald-800/60 bg-emerald-950/25 text-emerald-200'
+                                : 'border-slate-800 bg-slate-950/80 hover:border-amber-500/50 text-slate-200'
+                            }`}
+                          >
+                            {acc.isCompleted ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-amber-400/70 shrink-0" />
+                            )}
+                            <span
+                              className={`text-xs leading-relaxed ${
+                                acc.isCompleted ? 'line-through text-slate-400' : ''
+                              }`}
+                            >
+                              {acc.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Weekly Method Guidance */}
+                  {week.guidance.length > 0 && (
+                    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-1.5">
+                      <span className="font-bold text-rose-300 block">
+                        💡 本周执行要领与注意事项：
+                      </span>
+                      <ul className="list-disc list-inside space-y-1 text-slate-300 pl-1 leading-relaxed">
+                        {week.guidance.map((g, gIdx) => (
+                          <li key={gIdx}>{g}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Isolated Weekly Politics Reflection Note */}
+                  <div className="rounded-xl border border-rose-500/30 bg-slate-950/70 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <StickyNote className="h-4 w-4 text-rose-400" />
+                        <h4 className="font-bold text-white text-xs">
+                          📕 本周政治专属复盘周记 · 第{week.weekNumber}周 ({week.dateRange})
+                        </h4>
+                        <span className="text-[10px] font-mono text-rose-300/90 bg-rose-950/60 border border-rose-700/40 px-2 py-0.2 rounded-full">
+                          仅在政治模块独立展示，不串入其他科目
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {week.weeklyNoteUpdatedAt && (
+                          <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
+                            更新于: {week.weeklyNoteUpdatedAt}
+                          </span>
+                        )}
+                        <button
+                          onClick={(e) => handleOpenPoliticsWeekNoteModal(week, e)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/40 text-xs font-medium transition-all cursor-pointer"
+                        >
+                          <FileEdit className="h-3.5 w-3.5" />
+                          <span>{hasWeeklyNote ? '修改周记' : '记录周记'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {hasWeeklyNote ? (
+                      <div
+                        onClick={(e) => handleOpenPoliticsWeekNoteModal(week, e)}
+                        className="rounded-lg bg-slate-900/90 border border-rose-500/30 p-3 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed cursor-pointer hover:border-rose-500/50 transition-colors"
+                      >
+                        {week.weeklyNote}
+                      </div>
+                    ) : (
+                      <div
+                        onClick={(e) => handleOpenPoliticsWeekNoteModal(week, e)}
+                        className="rounded-lg bg-slate-900/40 border border-dashed border-slate-800 p-2.5 text-xs text-slate-400 flex items-center justify-between gap-2 cursor-pointer hover:border-rose-500/40 hover:text-slate-300 transition-colors"
+                      >
+                        <span>
+                          记录本周肖八/肖四高频易混帽词、背诵手册定位页码或主观题背诵盲点...
+                        </span>
+                        <span className="text-rose-300 font-semibold shrink-0">+ 立即记录</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : viewTrack === 'english' ? (
+        /* =================================================================== */
+        /* 2A-2. DEDICATED WEEKLY ENGLISH SCHEDULE VIEW (viewTrack === 'english') */
+        /* =================================================================== */
         <div className="space-y-4">
           {filteredEnglishWeeks.length === 0 && (
             <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-12 text-center text-slate-400">
@@ -1139,7 +1805,8 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             return (
               <div
                 key={week.id}
-                className={`rounded-2xl border transition-all overflow-hidden ${
+                id={`timeline-english-week-${week.id}`}
+                className={`scroll-mt-20 rounded-2xl border transition-all overflow-hidden ${
                   isCurrentWeek
                     ? 'border-teal-500/80 bg-slate-900/95 shadow-lg shadow-teal-950/30'
                     : isAllDone
@@ -1385,7 +2052,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     {hasWeeklyNote ? (
                       <div
                         onClick={(e) => handleOpenEnglishWeekNoteModal(week, e)}
-                        className="rounded-lg bg-slate-900/90 border border-teal-500/30 border-l-4 border-l-teal-400 p-3 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed cursor-pointer hover:border-teal-500/50 transition-colors"
+                        className="rounded-lg bg-slate-900/90 border border-teal-500/30 p-3 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed cursor-pointer hover:border-teal-500/50 transition-colors"
                       >
                         {week.weeklyNote}
                       </div>
@@ -1408,7 +2075,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
         </div>
       ) : (
         /* =================================================================== */
-        /* 2B. DAILY TIMELINE CARD LIST (math | cs | politics | all)           */
+        /* 2B. DAILY TIMELINE CARD LIST (math | cs | all [Math II + 408])       */
         /* =================================================================== */
         <div className="space-y-3">
           {filteredPlans.length === 0 && (
@@ -1424,15 +2091,13 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
             const isExpanded = expandedDate === plan.date;
             const mathCompleted = Boolean(plan.math2Task?.isCompleted);
             const csCompleted = Boolean(plan.csTask?.isCompleted);
-            const politicsCompleted = Boolean(plan.politicsTask?.isCompleted);
 
-            // Isolated notes for this day across the 3 daily subjects
+            // Isolated daily notes for Math II and 408 CS
             const mathNoteText = getIsolatedNoteForSubject(plan, 'math');
             const csNoteText = getIsolatedNoteForSubject(plan, 'cs');
-            const politicsNoteText = getIsolatedNoteForSubject(plan, 'politics');
 
-            const activeTrackSubject: NoteSubjectTrack =
-              viewTrack === 'cs' ? 'cs' : viewTrack === 'politics' ? 'politics' : 'math';
+            const activeTrackSubject: DailyNoteSubjectTrack =
+              viewTrack === 'cs' ? 'cs' : 'math';
             const activeTrackNoteText = getIsolatedNoteForSubject(plan, activeTrackSubject);
             const activeTrackNoteTime = getIsolatedNoteTimestampForSubject(plan, activeTrackSubject);
             const hasNoteInCurrentView = planHasNoteInTrack(plan, viewTrack);
@@ -1442,15 +2107,14 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 ? 'border-amber-500/70 bg-slate-900/90 shadow-md shadow-amber-950/20'
                 : viewTrack === 'cs'
                 ? 'border-cyan-500/70 bg-slate-900/90 shadow-md shadow-cyan-950/20'
-                : viewTrack === 'politics'
-                ? 'border-rose-500/70 bg-slate-900/90 shadow-md shadow-rose-950/20'
                 : 'border-emerald-500/70 bg-slate-900/90 shadow-md'
               : 'border-slate-800 bg-slate-900/40 hover:border-slate-700';
 
             return (
               <div
                 key={plan.date}
-                className={`rounded-xl border transition-all ${cardBorderClass}`}
+                id={`timeline-day-${plan.date}`}
+                className={`scroll-mt-20 rounded-xl border transition-all ${cardBorderClass}`}
               >
                 {/* Card Summary Header */}
                 <div
@@ -1490,22 +2154,6 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                               {plan.csTask.title}
                             </h3>
                           </>
-                        ) : viewTrack === 'politics' ? (
-                          <>
-                            <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-red-500/10 text-red-300/90 border border-red-500/20">
-                              {plan.politicsDetail?.phaseTitle
-                                ? `【${plan.politicsDetail.phaseTitle}】`
-                                : '【政治专项】'}
-                            </span>
-                            {plan.politicsDetail?.dayTypeLabel && (
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-red-300/80 border border-slate-800">
-                                {plan.politicsDetail.dayTypeLabel}
-                              </span>
-                            )}
-                            <h3 className="text-sm font-bold text-white truncate max-w-xl">
-                              {plan.politicsDetail?.title || plan.politicsTask.title}
-                            </h3>
-                          </>
                         ) : (
                           <h3 className="text-sm font-bold text-white truncate max-w-xl">
                             {plan.theme}
@@ -1536,14 +2184,9 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             <CheckCircle2 className="h-3 w-3" /> 408已搞定
                           </span>
                         )}
-                        {viewTrack === 'politics' && politicsCompleted && (
+                        {viewTrack === 'all' && mathCompleted && csCompleted && (
                           <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1 font-semibold">
-                            <CheckCircle2 className="h-3 w-3" /> 政治已搞定
-                          </span>
-                        )}
-                        {viewTrack === 'all' && mathCompleted && csCompleted && politicsCompleted && (
-                          <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1 font-semibold">
-                            <CheckCircle2 className="h-3 w-3" /> 当日全科收官
+                            <CheckCircle2 className="h-3 w-3" /> 当日双核收官
                           </span>
                         )}
                       </div>
@@ -1564,20 +2207,8 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                           </span>
                         )}
 
-                        {viewTrack === 'politics' && (
-                          <span className="text-slate-300 truncate max-w-2xl">
-                            <strong className="text-red-400/80">建议时长: </strong>
-                            <span className="text-amber-300 font-mono font-semibold mr-2">
-                              {plan.politicsDetail?.durationRange ||
-                                `${plan.politicsTask.durationMinutes}分钟`}
-                            </span>
-                            <strong className="text-slate-400">任务重点: </strong>
-                            {plan.politicsDetail?.goal || plan.politicsTask.action}
-                          </span>
-                        )}
-
                         {viewTrack === 'all' && (
-                          <div className="mt-3.5 pt-3.5 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                          <div className="mt-3.5 pt-3.5 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                             {/* Sub-column 1: 📐 数学二 */}
                             <div
                               className={`rounded-xl border p-3 flex flex-col justify-between transition-colors ${
@@ -1667,58 +2298,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                                 </button>
                               </div>
                             </div>
-
-                            {/* Sub-column 3: 📕 思想政治 */}
-                            <div
-                              className={`rounded-xl border p-3 flex flex-col justify-between transition-colors ${
-                                politicsCompleted
-                                  ? 'border-emerald-800/60 bg-emerald-950/20'
-                                  : 'border-red-500/20 bg-slate-950/60'
-                              }`}
-                            >
-                              <div>
-                                <div className="flex items-center justify-between gap-1 mb-1.5 flex-wrap">
-                                  <span className="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-500/10 text-red-300/90 border border-red-500/20">
-                                    {plan.politicsDetail?.phaseTitle
-                                      ? `[政治·${plan.politicsDetail.phaseTitle}]`
-                                      : '[思想政治]'}
-                                  </span>
-                                  <span className="text-[10px] font-mono text-amber-300 bg-slate-900 px-1.5 py-0.2 rounded border border-slate-800">
-                                    {plan.politicsDetail?.dayTypeLabel || '推进日'}
-                                  </span>
-                                </div>
-                                <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">
-                                  {plan.politicsDetail?.title || plan.politicsTask.title}
-                                </h4>
-                                <p className="text-[11px] text-slate-300 line-clamp-2 mt-1 leading-relaxed">
-                                  {plan.politicsDetail?.goal || plan.politicsTask.action}
-                                </p>
-                              </div>
-                              <div className="pt-2 mt-2 border-t border-slate-800/60 flex items-center justify-between">
-                                <span className="text-[10px] text-amber-300 font-mono font-medium">
-                                  {plan.politicsDetail?.durationRange ||
-                                    `${plan.politicsTask.durationMinutes}m`}
-                                </span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onTogglePoliticsComplete?.(plan.date);
-                                  }}
-                                  className={`text-[11px] px-2.5 py-0.5 rounded font-medium cursor-pointer transition-colors ${
-                                    politicsCompleted
-                                      ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
-                                      : 'bg-red-500/10 hover:bg-red-500/15 text-red-300/90 border border-red-500/25'
-                                  }`}
-                                >
-                                  {politicsCompleted ? '✓ 政治已搞定' : '○ 政治打卡'}
-                                </button>
-                              </div>
-                            </div>
                           </div>
                         )}
                       </div>
 
-                      {/* Subject-Isolated Note Preview Banner (Strictly shows ONLY the active subject's note!) */}
+                      {/* Subject-Isolated Note Preview Banner */}
                       {viewTrack !== 'all' && activeTrackNoteText.trim().length > 0 && (
                         <div
                           onClick={(e) => handleOpenNoteModal(plan, activeTrackSubject, e)}
@@ -1727,7 +2311,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         >
                           <span className="text-amber-400 font-bold shrink-0 flex items-center gap-1">
                             <StickyNote className="h-3.5 w-3.5 text-amber-400" />
-                            <span>[{SUBJECT_NOTE_META[activeTrackSubject].shortLabel}]:</span>
+                            <span>[{DAILY_SUBJECT_NOTE_META[activeTrackSubject].shortLabel}]:</span>
                           </span>
                           <span className="truncate flex-1 text-slate-200 group-hover:text-amber-100 font-normal">
                             {activeTrackNoteText}
@@ -1763,16 +2347,6 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                               <StickyNote className="h-3 w-3 text-cyan-400 shrink-0" />
                               <span className="font-bold text-cyan-300 shrink-0">[408笔记]:</span>
                               <span className="truncate">{csNoteText}</span>
-                            </div>
-                          )}
-                          {politicsNoteText.trim() && (
-                            <div
-                              onClick={(e) => handleOpenNoteModal(plan, 'politics', e)}
-                              className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 px-2.5 py-1 text-xs text-rose-200 hover:bg-rose-500/20 cursor-pointer max-w-xs"
-                            >
-                              <StickyNote className="h-3 w-3 text-rose-400 shrink-0" />
-                              <span className="font-bold text-rose-300 shrink-0">[政治笔记]:</span>
-                              <span className="truncate">{politicsNoteText}</span>
                             </div>
                           )}
                         </div>
@@ -1834,32 +2408,6 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       </button>
                     )}
 
-                    {viewTrack === 'politics' && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onTogglePoliticsComplete?.(plan.date);
-                        }}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                          politicsCompleted
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
-                            : 'bg-red-950/25 text-red-300/90 border border-red-500/20 hover:bg-red-900/40'
-                        }`}
-                      >
-                        {politicsCompleted ? (
-                          <>
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                            <span>政治已完成</span>
-                          </>
-                        ) : (
-                          <>
-                            <Circle className="h-3.5 w-3.5 text-red-400/80" />
-                            <span>政治打卡</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-
                     {/* Isolated Subject Note Button */}
                     <button
                       onClick={(e) => handleOpenNoteModal(plan, activeTrackSubject, e)}
@@ -1876,7 +2424,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                           <span>
                             {viewTrack === 'all'
                               ? '已记笔记'
-                              : `已记${SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`}
+                              : `已记${DAILY_SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`}
                           </span>
                         </>
                       ) : (
@@ -1885,7 +2433,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                           <span>
                             {viewTrack === 'all'
                               ? '记分科笔记'
-                              : `记${SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`}
+                              : `记${DAILY_SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`}
                           </span>
                         </>
                       )}
@@ -1901,8 +2449,6 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             ? 'math2'
                             : viewTrack === 'cs'
                             ? 'cs'
-                            : viewTrack === 'politics'
-                            ? 'politics'
                             : undefined
                         );
                       }}
@@ -2122,110 +2668,14 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                       </div>
                     )}
 
-                    {/* POLITICS DEDICATED SECTION */}
-                    {(viewTrack === 'politics' || viewTrack === 'all') && (
-                      <div className="rounded-xl border border-red-500/20 bg-slate-900/70 p-4 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => onTogglePoliticsComplete?.(plan.date)}
-                              className="text-red-400/80 hover:text-red-300 cursor-pointer"
-                            >
-                              {plan.politicsTask.isCompleted ? (
-                                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-slate-500" />
-                              )}
-                            </button>
-                            <div>
-                              <span className="text-xs font-mono text-red-300/90 font-bold mr-2">
-                                {plan.politicsDetail?.phaseTitle
-                                  ? `【${plan.politicsDetail.phaseTitle}】`
-                                  : '【考研政治】'}
-                              </span>
-                              {plan.politicsDetail?.dayTypeLabel && (
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-300/90 border border-red-500/20 mr-2">
-                                  {plan.politicsDetail.dayTypeLabel}
-                                </span>
-                              )}
-                              <span className="font-bold text-white text-sm">
-                                {plan.politicsDetail?.title || plan.politicsTask.title}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[11px] font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
-                              建议时间:{' '}
-                              {plan.politicsDetail?.durationRange ||
-                                `${plan.politicsTask.durationMinutes} 分钟`}
-                            </span>
-                            <button
-                              onClick={() => onOpenEditModal?.(plan, 'politics')}
-                              className="p-1 rounded text-slate-400 hover:text-red-300 hover:bg-slate-800 transition-colors"
-                              title="修改此日政治计划"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-3 text-slate-300">
-                          {plan.politicsDetail?.goal && (
-                            <p className="leading-relaxed">
-                              <strong className="text-red-400/80">阶段目标：</strong>
-                              {plan.politicsDetail.goal}
-                            </p>
-                          )}
-
-                          {plan.politicsDetail?.steps && plan.politicsDetail.steps.length > 0 && (
-                            <div className="space-y-1.5">
-                              <strong className="text-slate-400 block mb-1">
-                                各环节精细时间预算与落地执行：
-                              </strong>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                                {plan.politicsDetail.steps.map((st, i) => (
-                                  <div
-                                    key={i}
-                                    className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80 space-y-1"
-                                  >
-                                    <div className="flex items-center justify-between text-red-300/90 font-semibold">
-                                      <span className="flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-red-400/80" />
-                                        <span>{st.title}</span>
-                                      </span>
-                                      <span className="font-mono text-amber-400 text-[10px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                                        {st.duration}
-                                      </span>
-                                    </div>
-                                    <p className="text-slate-300 leading-relaxed text-[11px]">
-                                      {st.detail}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {plan.politicsDetail?.keyDirectives &&
-                            plan.politicsDetail.keyDirectives.length > 0 && (
-                              <div className="text-[11px] text-amber-200/90 bg-amber-950/20 p-2.5 rounded-lg border border-amber-900/40 leading-relaxed">
-                                <strong className="text-amber-400">核心纪律与注意事项：</strong>
-                                {plan.politicsDetail.keyDirectives.join('；')}
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* SUBJECT-ISOLATED DAILY REFLECTION NOTES SECTION */}
+                    {/* SUBJECT-ISOLATED DAILY REFLECTION NOTES SECTION (Math II & 408 CS) */}
                     {viewTrack !== 'all' ? (
-                      /* Single Subject Track View: Strictly displays and edits ONLY this subject's note */
                       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-wrap">
                             <StickyNote className="h-4 w-4 text-amber-400" />
                             <h4 className="font-bold text-white text-xs">
-                              {SUBJECT_NOTE_META[activeTrackSubject].label} ({plan.formattedDate})
+                              {DAILY_SUBJECT_NOTE_META[activeTrackSubject].label} ({plan.formattedDate})
                             </h4>
                             <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2 py-0.2 rounded border border-slate-800">
                               本科目独立保存，不与其他科目混用
@@ -2244,8 +2694,8 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                               <FileEdit className="h-3.5 w-3.5" />
                               <span>
                                 {activeTrackNoteText.trim()
-                                  ? `修改${SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`
-                                  : `添加${SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`}
+                                  ? `修改${DAILY_SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`
+                                  : `添加${DAILY_SUBJECT_NOTE_META[activeTrackSubject].shortLabel}`}
                               </span>
                             </button>
                           </div>
@@ -2254,7 +2704,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         {activeTrackNoteText.trim() ? (
                           <div
                             onClick={() => handleOpenNoteModal(plan, activeTrackSubject)}
-                            className={`rounded-lg bg-slate-950/70 border border-l-4 p-3 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed cursor-pointer transition-colors ${SUBJECT_NOTE_META[activeTrackSubject].borderClass}`}
+                            className={`rounded-lg bg-slate-950/70 border p-3 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed cursor-pointer transition-colors ${DAILY_SUBJECT_NOTE_META[activeTrackSubject].borderClass}`}
                           >
                             {activeTrackNoteText}
                           </div>
@@ -2264,7 +2714,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                             className="rounded-lg bg-slate-950/40 border border-dashed border-slate-800 p-3 text-xs text-slate-400 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:border-slate-700 hover:text-slate-300 transition-colors"
                           >
                             <span>
-                              💡 记录今日【{SUBJECT_NOTE_META[activeTrackSubject].shortLabel}
+                              💡 记录今日【{DAILY_SUBJECT_NOTE_META[activeTrackSubject].shortLabel}
                               】的易错点、未完成留存或明日补救任务...
                             </span>
                             <span className="text-amber-400 font-semibold shrink-0 flex items-center gap-1">
@@ -2274,21 +2724,21 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         )}
                       </div>
                     ) : (
-                      /* All-Subjects Track View: 3 Separate Subject Note Slots side-by-side */
+                      /* All-Subjects Daily View: 2 Separate Daily Subject Note Slots (Math II & 408) */
                       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <StickyNote className="h-4 w-4 text-amber-400" />
                             <h4 className="font-bold text-white text-xs">
-                              分科独立复盘笔记 ({plan.formattedDate} · 数二 / 408 / 政治各自独立隔离)
+                              分科独立复盘日笔记 ({plan.formattedDate} · 数二与408各自独立隔离，政治/英语使用周记)
                             </h4>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                          {(['math', 'cs', 'politics'] as NoteSubjectTrack[]).map((subj) => {
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                          {(['math', 'cs'] as DailyNoteSubjectTrack[]).map((subj) => {
                             const txt = getIsolatedNoteForSubject(plan, subj);
-                            const meta = SUBJECT_NOTE_META[subj];
+                            const meta = DAILY_SUBJECT_NOTE_META[subj];
                             return (
                               <div
                                 key={subj}
@@ -2365,7 +2815,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
         </div>
       </section>
 
-      {/* 4A. Subject-Isolated Daily Note Editor Modal (Math / 408 / Politics) */}
+      {/* 4A. Subject-Isolated Daily Note Editor Modal (Math II / 408 CS) */}
       {editingPlan && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
@@ -2383,11 +2833,11 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 <div>
                   <h3 className="text-sm sm:text-base font-bold text-white">
                     {editingPlan.formattedDate} ({editingPlan.weekday}) ·{' '}
-                    {SUBJECT_NOTE_META[editingNoteSubject].label}
+                    {DAILY_SUBJECT_NOTE_META[editingNoteSubject].label}
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
                     各科复盘笔记已彻底隔离，当前编辑的内容仅归属【
-                    {SUBJECT_NOTE_META[editingNoteSubject].shortLabel}】
+                    {DAILY_SUBJECT_NOTE_META[editingNoteSubject].shortLabel}】
                   </p>
                 </div>
               </div>
@@ -2401,7 +2851,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
 
             {/* Subject Switcher Tabs inside Modal */}
             <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-              {(['math', 'cs', 'politics'] as NoteSubjectTrack[]).map((subj) => {
+              {(['math', 'cs'] as DailyNoteSubjectTrack[]).map((subj) => {
                 const isCurr = editingNoteSubject === subj;
                 const hasSubjContent = Boolean(
                   getIsolatedNoteForSubject(editingPlan, subj).trim()
@@ -2417,7 +2867,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                         : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
-                    <span>{SUBJECT_NOTE_META[subj].shortLabel}</span>
+                    <span>{DAILY_SUBJECT_NOTE_META[subj].shortLabel}</span>
                     {hasSubjContent && (
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     )}
@@ -2466,7 +2916,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                     handleSaveNote();
                   }
                 }}
-                placeholder={`在此记录 ${editingPlan.formattedDate} 的【${SUBJECT_NOTE_META[editingNoteSubject].shortLabel}】专属内容...\n（支持按 Ctrl + Enter 快捷保存）`}
+                placeholder={`在此记录 ${editingPlan.formattedDate} 的【${DAILY_SUBJECT_NOTE_META[editingNoteSubject].shortLabel}】专属内容...\n（支持按 Ctrl + Enter 快捷保存）`}
                 className="w-full rounded-xl border border-slate-700 bg-slate-950/90 p-3 text-xs sm:text-sm text-slate-200 placeholder:text-slate-600 focus:border-amber-400 focus:outline-none leading-relaxed"
               />
             </div>
@@ -2498,7 +2948,7 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                   className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all shadow-md cursor-pointer"
                 >
                   <BookmarkCheck className="h-4 w-4" />
-                  <span>保存{SUBJECT_NOTE_META[editingNoteSubject].shortLabel}</span>
+                  <span>保存{DAILY_SUBJECT_NOTE_META[editingNoteSubject].shortLabel}</span>
                 </button>
               </div>
             </div>
@@ -2611,6 +3061,118 @@ export const DailyTimeline: React.FC<DailyTimelineProps> = ({
                 >
                   <BookmarkCheck className="h-4 w-4" />
                   <span>保存英语周记</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4C. Isolated Weekly Politics Note Editor Modal */}
+      {editingPoliticsWeek && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setEditingPoliticsWeek(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-rose-500/40 bg-slate-900 p-5 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 shrink-0">
+                  <StickyNote className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-white">
+                    第{editingPoliticsWeek.weekNumber}周 ({editingPoliticsWeek.dateRange}) · 政治专属复盘周记
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    政治采用按周独立周记，仅在政治按周视图与首页政治周记切页中可见
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingPoliticsWeek(null)}
+                className="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Quick Tag Templates for Politics */}
+            <div>
+              <div className="text-[11px] font-semibold text-slate-400 mb-1.5">
+                ⚡ 快捷插入政治周复盘标签：
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  '📕 肖八错题诊断：知识点不熟 / 题干理解偏差 / 选项帽词混淆',
+                  '📖 背诵手册定位：已在手册第__页标注本周高频易错点',
+                  '🔥 肖四主观题背诵：第__套核心采分词已能脱离答案默写',
+                  '🗓️ 机动日安排：本周预留机动日A补齐剩余小程序刷题',
+                ].map((tag, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setPoliticsWeekNoteInput((prev) => {
+                        const prefix = prev.trim() ? prev.trim() + '\n' : '';
+                        return prefix + tag;
+                      });
+                    }}
+                    className="px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-300 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                  >
+                    + {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <textarea
+                autoFocus
+                rows={5}
+                value={politicsWeekNoteInput}
+                onChange={(e) => setPoliticsWeekNoteInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    handleSavePoliticsWeekNoteModal();
+                  }
+                }}
+                placeholder={`记录第${editingPoliticsWeek.weekNumber}周肖八/肖四错题总结、背诵手册重点页码或主观题背诵复盘...\n（支持按 Ctrl + Enter 快捷保存）`}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950/90 p-3 text-xs sm:text-sm text-slate-200 placeholder:text-slate-600 focus:border-rose-400 focus:outline-none leading-relaxed"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <div>
+                {editingPoliticsWeek.weeklyNote && (
+                  <button
+                    type="button"
+                    onClick={handleClearPoliticsWeekNoteModal}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-900/40 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>清空周记</span>
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingPoliticsWeek(null)}
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 transition-colors cursor-pointer"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePoliticsWeekNoteModal}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                >
+                  <BookmarkCheck className="h-4 w-4" />
+                  <span>保存政治周记</span>
                 </button>
               </div>
             </div>

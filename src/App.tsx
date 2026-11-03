@@ -4,9 +4,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { DayPlan, EnglishWeekPlan, NoteSubjectTrack } from './types/kaoyan';
+import {
+  DayPlan,
+  EnglishWeekPlan,
+  PoliticsWeekPlan,
+  NoteSubjectTrack,
+} from './types/kaoyan';
 import { INITIAL_DAY_PLANS } from './data/scheduleData';
 import { INITIAL_ENGLISH_WEEK_PLANS } from './data/englishScheduleData';
+import { INITIAL_POLITICS_WEEK_PLANS } from './data/politicsScheduleData';
 import { Header, ActiveTabType } from './components/Header';
 import { DashboardOverview } from './components/DashboardOverview';
 import { DailyTimeline, TimelineTrackType } from './components/DailyTimeline';
@@ -27,6 +33,7 @@ import {
 import { desktopNotificationManager } from './utils/desktopNotification';
 import { DayScheduleEditModal } from './components/DayScheduleEditModal';
 import { EnglishWeekEditModal } from './components/EnglishWeekEditModal';
+import { PoliticsWeekEditModal } from './components/PoliticsWeekEditModal';
 
 const STORAGE_KEY = 'kaoyan_battle_station_plans_v12';
 const LEGACY_STORAGE_KEYS = [
@@ -44,6 +51,7 @@ const LEGACY_STORAGE_KEYS = [
 ];
 
 const ENGLISH_STORAGE_KEY = 'kaoyan_english_weeks_v1';
+const POLITICS_STORAGE_KEY = 'kaoyan_politics_weeks_v1';
 
 /**
  * Computes today's date in China Standard Time (东八区, Asia/Shanghai, UTC+8)
@@ -239,6 +247,101 @@ function mergeSavedEnglishWeeks(
   });
 }
 
+// Smart merge function for Politics weekly plans: preserves sub-task & acceptance completions, custom edits, weekly notes, and migrates any legacy daily politicsNote
+function mergeSavedPoliticsWeeks(
+  savedWeeks: PoliticsWeekPlan[] | null,
+  initialWeeks: PoliticsWeekPlan[],
+  legacyPlans?: DayPlan[]
+): PoliticsWeekPlan[] {
+  const savedById = new Map<string, PoliticsWeekPlan>();
+  const savedSubTaskCompleted = new Map<string, boolean>();
+  const savedCriteriaCompleted = new Map<string, boolean>();
+
+  if (Array.isArray(savedWeeks)) {
+    savedWeeks.forEach((w) => {
+      savedById.set(w.id, w);
+      if (Array.isArray(w.subTasks)) {
+        w.subTasks.forEach((st) => {
+          savedSubTaskCompleted.set(st.id, Boolean(st.isCompleted));
+        });
+      }
+      if (Array.isArray(w.acceptanceCriteria)) {
+        w.acceptanceCriteria.forEach((ac) => {
+          savedCriteriaCompleted.set(ac.id, Boolean(ac.isCompleted));
+        });
+      }
+    });
+  }
+
+  return initialWeeks.map((initWeek) => {
+    const savedWeek = savedById.get(initWeek.id);
+
+    // Migrate any legacy daily politicsNote within this week's date range if weeklyNote is not yet set
+    let migratedNote: string | undefined = savedWeek?.weeklyNote;
+    let migratedNoteUpdatedAt: string | undefined = savedWeek?.weeklyNoteUpdatedAt;
+
+    if (!migratedNote && Array.isArray(legacyPlans)) {
+      const legacyNotesInRange = legacyPlans
+        .filter(
+          (p) =>
+            p.date >= initWeek.startDate &&
+            p.date <= initWeek.endDate &&
+            Boolean(p.politicsNote && p.politicsNote.trim())
+        )
+        .map((p) => `[${p.formattedDate}] ${p.politicsNote!.trim()}`);
+
+      if (legacyNotesInRange.length > 0) {
+        migratedNote = legacyNotesInRange.join('\n\n');
+        migratedNoteUpdatedAt = '自动迁移自原日笔记';
+      }
+    }
+
+    if (!savedWeek) {
+      return {
+        ...initWeek,
+        weeklyNote: migratedNote,
+        weeklyNoteUpdatedAt: migratedNoteUpdatedAt,
+      };
+    }
+
+    if (savedWeek.isCustomized) {
+      return {
+        ...initWeek,
+        ...savedWeek,
+        isCustomized: true,
+        customizedAt: savedWeek.customizedAt,
+        weeklyNote: migratedNote,
+        weeklyNoteUpdatedAt: migratedNoteUpdatedAt,
+        subTasks: Array.isArray(savedWeek.subTasks)
+          ? savedWeek.subTasks
+          : initWeek.subTasks,
+        acceptanceCriteria: Array.isArray(savedWeek.acceptanceCriteria)
+          ? savedWeek.acceptanceCriteria
+          : initWeek.acceptanceCriteria,
+      };
+    }
+
+    return {
+      ...initWeek,
+      isCustomized: false,
+      weeklyNote: migratedNote,
+      weeklyNoteUpdatedAt: migratedNoteUpdatedAt,
+      subTasks: initWeek.subTasks.map((initSub) => ({
+        ...initSub,
+        isCompleted: savedSubTaskCompleted.has(initSub.id)
+          ? Boolean(savedSubTaskCompleted.get(initSub.id))
+          : initSub.isCompleted,
+      })),
+      acceptanceCriteria: initWeek.acceptanceCriteria.map((initAc) => ({
+        ...initAc,
+        isCompleted: savedCriteriaCompleted.has(initAc.id)
+          ? Boolean(savedCriteriaCompleted.get(initAc.id))
+          : initAc.isCompleted,
+      })),
+    };
+  });
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTabType>('dashboard');
   const [timelineInitialTrack, setTimelineInitialTrack] = useState<
@@ -284,6 +387,21 @@ export default function App() {
     return INITIAL_ENGLISH_WEEK_PLANS;
   });
 
+  const [politicsWeeks, setPoliticsWeeks] = useState<PoliticsWeekPlan[]>(() => {
+    try {
+      const saved = localStorage.getItem(POLITICS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return mergeSavedPoliticsWeeks(parsed, INITIAL_POLITICS_WEEK_PLANS, plans);
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return mergeSavedPoliticsWeeks(null, INITIAL_POLITICS_WEEK_PLANS, plans);
+  });
+
   // Automatically default to today's date upon refresh or load
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return getTodayOrEffectiveDate(INITIAL_DAY_PLANS);
@@ -319,6 +437,15 @@ export default function App() {
     }
   }, [englishWeeks]);
 
+  // Sync Politics weekly plans to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem(POLITICS_STORAGE_KEY, JSON.stringify(politicsWeeks));
+    } catch {
+      // storage error
+    }
+  }, [politicsWeeks]);
+
   // Periodic check for schedule nodes arrival to trigger Windows desktop notification
   useEffect(() => {
     desktopNotificationManager.checkAndTriggerSchedule();
@@ -333,16 +460,15 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 2500);
   };
 
-  // Check if a day's core tasks are fully conquered and trigger grand celebration
+  // Check if a day's daily core tasks (Math II + 408 CS) are fully conquered and trigger grand celebration
   const checkDayCompletion = (plan: DayPlan) => {
     const mathDone = !plan.math2Task || plan.math2Task.isCompleted;
     const csDone = !plan.csTask || plan.csTask.isCompleted;
-    const politicsDone = !plan.politicsTask || plan.politicsTask.isCompleted;
 
-    if (mathDone && csDone && politicsDone) {
+    if (mathDone && csDone) {
       setTimeout(() => {
         triggerDayCompletionCelebration();
-        showToast(`🏆 战力爆发！${plan.formattedDate} 当日主干战备全部圆满收官！`);
+        showToast(`🏆 战力爆发！${plan.formattedDate} 当日数二与408主干任务圆满收官！`);
       }, 400);
     }
   };
@@ -458,7 +584,83 @@ export default function App() {
     );
   };
 
-  // Toggle Politics routine task
+  // Toggle Politics weekly split sub-task
+  const handleTogglePoliticsSubTask = (weekId: string, subTaskId: string) => {
+    setPoliticsWeeks((prev) =>
+      prev.map((week) => {
+        if (week.id !== weekId) return week;
+        let toggledTitle = '';
+        let becameCompleted = false;
+        const updatedSubTasks = week.subTasks.map((st) => {
+          if (st.id === subTaskId) {
+            becameCompleted = !st.isCompleted;
+            toggledTitle = st.title;
+            return { ...st, isCompleted: becameCompleted };
+          }
+          return st;
+        });
+
+        if (becameCompleted) {
+          triggerTaskCelebration();
+          const allDone =
+            updatedSubTasks.length > 0 && updatedSubTasks.every((s) => s.isCompleted);
+          if (allDone) {
+            setTimeout(() => {
+              triggerDayCompletionCelebration();
+              showToast(`🏆 政治第${week.weekNumber}周 (${week.dateRange}) 全部核心动作圆满攻克！`);
+            }, 350);
+          } else {
+            showToast(`🎉 打卡政治第${week.weekNumber}周任务：${toggledTitle}`);
+          }
+        }
+
+        return {
+          ...week,
+          subTasks: updatedSubTasks,
+        };
+      })
+    );
+  };
+
+  // Toggle Politics weekly acceptance criteria
+  const handleTogglePoliticsAcceptance = (weekId: string, criteriaId: string) => {
+    setPoliticsWeeks((prev) =>
+      prev.map((week) => {
+        if (week.id !== weekId) return week;
+        let toggledText = '';
+        let becameCompleted = false;
+        const updatedCriteria = week.acceptanceCriteria.map((ac) => {
+          if (ac.id === criteriaId) {
+            becameCompleted = !ac.isCompleted;
+            toggledText = ac.text;
+            return { ...ac, isCompleted: becameCompleted };
+          }
+          return ac;
+        });
+
+        if (becameCompleted) {
+          triggerTaskCelebration();
+          const allAccepted =
+            updatedCriteria.length > 0 && updatedCriteria.every((c) => c.isCompleted);
+          if (allAccepted) {
+            setTimeout(() => {
+              triggerDayCompletionCelebration();
+              showToast(`🎖️ 政治第${week.weekNumber}周 (${week.dateRange}) 验收标准全项达标！`);
+            }, 350);
+          } else {
+            showToast(`✅ 达成政治第${week.weekNumber}周验收标准：${toggledText.slice(0, 18)}...`);
+          }
+        }
+
+        return {
+          ...week,
+          acceptanceCriteria: updatedCriteria,
+        };
+      })
+    );
+  };
+
+  // Toggle Politics routine task (legacy fallback)
   const handleTogglePoliticsComplete = (date: string) => {
     setPlans((prev) =>
       prev.map((plan) => {
@@ -468,15 +670,13 @@ export default function App() {
             triggerTaskCelebration();
             showToast(`🎉 拿下考研政治任务：${plan.politicsTask.title}`);
           }
-          const updated = {
+          return {
             ...plan,
             politicsTask: {
               ...plan.politicsTask,
               isCompleted: nextVal,
             },
           };
-          if (nextVal) checkDayCompletion(updated);
-          return updated;
         }
         return plan;
       })
@@ -503,7 +703,6 @@ export default function App() {
             ...plan,
             mathNote: trimmed ? trimmed : undefined,
             mathNoteUpdatedAt: trimmed ? timestamp : undefined,
-            // Clear legacy dailyNote if mathNote is updated so they don't desync
             dailyNote: trimmed ? trimmed : undefined,
             dailyNoteUpdatedAt: trimmed ? timestamp : undefined,
           };
@@ -527,6 +726,30 @@ export default function App() {
       showToast(`📝 已保存【${subjectName}】专属复盘笔记（与其他科目隔离）`);
     } else {
       showToast(`📝 已清空【${subjectName}】复盘笔记`);
+    }
+  };
+
+  // Save Isolated Weekly Politics Note
+  const handleSavePoliticsWeekNote = (weekId: string, notes: string) => {
+    const trimmed = notes.trim();
+    const chinaNow = getChinaDateInfo();
+    const timestamp = `${chinaNow.month}月${chinaNow.day}日 ${chinaNow.timeStr}`;
+
+    setPoliticsWeeks((prev) =>
+      prev.map((week) => {
+        if (week.id !== weekId) return week;
+        return {
+          ...week,
+          weeklyNote: trimmed ? trimmed : undefined,
+          weeklyNoteUpdatedAt: trimmed ? timestamp : undefined,
+        };
+      })
+    );
+
+    if (trimmed) {
+      showToast('📕 已保存【政治专属周复盘笔记】（仅在政治模块独立展示）');
+    } else {
+      showToast('📕 已清空本周政治周记');
     }
   };
 
@@ -559,14 +782,16 @@ export default function App() {
     handleSaveSubjectNote(date, 'math', notes);
   };
 
-  // Reset all progress (both Daily Plans and Weekly English Plans)
+  // Reset all progress (Daily Plans + Weekly Politics Plans + Weekly English Plans)
   const handleResetPlans = () => {
     if (window.confirm('确定要将所有科目的打卡状态与自定义日程重置为初始默认值吗？')) {
       setPlans(INITIAL_DAY_PLANS);
+      setPoliticsWeeks(INITIAL_POLITICS_WEEK_PLANS);
       setEnglishWeeks(INITIAL_ENGLISH_WEEK_PLANS);
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(POLITICS_STORAGE_KEY);
       localStorage.removeItem(ENGLISH_STORAGE_KEY);
-      showToast('所有四科进度（含英语7周计划）已重置为初始战时方案');
+      showToast('所有四科进度（含政治7周动态规划与英语7周计划）已重置为初始方案');
     }
   };
 
@@ -575,6 +800,10 @@ export default function App() {
     plan: DayPlan;
     subjectTab?: 'math2' | 'cs' | 'english' | 'politics';
   } | null>(null);
+
+  // Dynamic weekly Politics schedule editing modal state
+  const [editingPoliticsWeekPlan, setEditingPoliticsWeekPlan] =
+    useState<PoliticsWeekPlan | null>(null);
 
   // Dynamic weekly English schedule editing modal state
   const [editingEnglishWeekPlan, setEditingEnglishWeekPlan] =
@@ -646,6 +875,35 @@ export default function App() {
     showToast(`🔄 已将【${initPlan.formattedDate}】恢复为官方大纲排期`);
   };
 
+  const handleSaveCustomPoliticsWeek = (updatedWeek: PoliticsWeekPlan) => {
+    setPoliticsWeeks((prev) =>
+      prev.map((w) => (w.id === updatedWeek.id ? updatedWeek : w))
+    );
+    showToast(
+      `✨ 已成功保存政治【第${updatedWeek.weekNumber}周 (${updatedWeek.dateRange})】的动态规划`
+    );
+  };
+
+  const handleResetPoliticsWeek = (weekId: string) => {
+    const initWeek = INITIAL_POLITICS_WEEK_PLANS.find((w) => w.id === weekId);
+    if (!initWeek) return;
+    setPoliticsWeeks((prev) =>
+      prev.map((w) => {
+        if (w.id === weekId) {
+          return {
+            ...initWeek,
+            isCustomized: false,
+            customizedAt: undefined,
+            weeklyNote: w.weeklyNote,
+            weeklyNoteUpdatedAt: w.weeklyNoteUpdatedAt,
+          };
+        }
+        return w;
+      })
+    );
+    showToast(`🔄 已将政治【第${initWeek.weekNumber}周】恢复为默认动态排期`);
+  };
+
   const handleSaveCustomEnglishWeek = (updatedWeek: EnglishWeekPlan) => {
     setEnglishWeeks((prev) =>
       prev.map((w) => (w.id === updatedWeek.id ? updatedWeek : w))
@@ -675,18 +933,29 @@ export default function App() {
     showToast(`🔄 已将英语【第${initWeek.weekNumber}周】恢复为默认排期`);
   };
 
-  // Export progress JSON (v10.0) - includes daily plans, isolated subject notes, AND weekly English plans/notes/custom edits
+  // Export progress JSON (v11.0) - includes daily plans, isolated subject notes, AND weekly Politics + English plans/notes/custom edits
   const handleExportData = () => {
     const customizedDaysList = plans.filter((p) => p.isCustomized);
+    const customizedPoliticsWeeksList = politicsWeeks.filter((w) => w.isCustomized);
     const customizedEnglishWeeksList = englishWeeks.filter((w) => w.isCustomized);
     const exportPayload = {
       app: 'kaoyan_battle_station',
-      version: '10.0',
+      version: '11.0',
       exportedAt: new Date().toISOString(),
       summary: {
         totalDays: plans.length,
         customizedDaysCount: customizedDaysList.length,
         customizedDates: customizedDaysList.map((p) => p.date),
+        totalPoliticsWeeks: politicsWeeks.length,
+        customizedPoliticsWeeksCount: customizedPoliticsWeeksList.length,
+        politicsCompletedSubTasks: politicsWeeks.reduce(
+          (acc, w) => acc + w.subTasks.filter((t) => t.isCompleted).length,
+          0
+        ),
+        politicsCompletedCriteria: politicsWeeks.reduce(
+          (acc, w) => acc + w.acceptanceCriteria.filter((c) => c.isCompleted).length,
+          0
+        ),
         totalEnglishWeeks: englishWeeks.length,
         customizedEnglishWeeksCount: customizedEnglishWeeksList.length,
         englishCompletedSubTasks: englishWeeks.reduce(
@@ -695,6 +964,7 @@ export default function App() {
         ),
       },
       plans: plans,
+      politicsWeeks: politicsWeeks,
       englishWeeks: englishWeeks,
     };
     const dataStr =
@@ -710,11 +980,11 @@ export default function App() {
     downloadAnchor.click();
     downloadAnchor.remove();
     showToast(
-      `作战数据已全量导出（含四科打卡、分科独立笔记、${customizedDaysList.length}天定制日计划与英语7周完整安排）`
+      `作战数据已全量导出（含数二/408日计划、政治7周动态规划、英语7周计划与四科独立笔记）`
     );
   };
 
-  // Import progress JSON (supports v10.0 full backup as well as legacy backups)
+  // Import progress JSON (supports v11.0 full backup as well as v10.0 and legacy backups)
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -726,6 +996,7 @@ export default function App() {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         let rawPlans: DayPlan[] | null = null;
+        let rawPoliticsWeeks: PoliticsWeekPlan[] | null = null;
         let rawEnglishWeeks: EnglishWeekPlan[] | null = null;
 
         if (Array.isArray(parsed)) {
@@ -734,25 +1005,42 @@ export default function App() {
           if (Array.isArray(parsed.plans)) {
             rawPlans = parsed.plans;
           }
+          if (Array.isArray(parsed.politicsWeeks)) {
+            rawPoliticsWeeks = parsed.politicsWeeks;
+          }
           if (Array.isArray(parsed.englishWeeks)) {
             rawEnglishWeeks = parsed.englishWeeks;
           }
         }
 
-        if (rawPlans || rawEnglishWeeks) {
+        if (rawPlans || rawPoliticsWeeks || rawEnglishWeeks) {
+          let mergedPlans: DayPlan[] | undefined;
           if (rawPlans) {
-            const mergedPlans = mergeSavedWithInitial(rawPlans, INITIAL_DAY_PLANS);
+            mergedPlans = mergeSavedWithInitial(rawPlans, INITIAL_DAY_PLANS);
             setPlans(mergedPlans);
           }
+          if (rawPoliticsWeeks) {
+            const mergedPolWeeks = mergeSavedPoliticsWeeks(
+              rawPoliticsWeeks,
+              INITIAL_POLITICS_WEEK_PLANS,
+              mergedPlans || plans
+            );
+            setPoliticsWeeks(mergedPolWeeks);
+          } else if (mergedPlans) {
+            // Migrate any legacy daily politicsNote from older backup files
+            setPoliticsWeeks((prev) =>
+              mergeSavedPoliticsWeeks(prev, INITIAL_POLITICS_WEEK_PLANS, mergedPlans)
+            );
+          }
           if (rawEnglishWeeks) {
-            const mergedWeeks = mergeSavedEnglishWeeks(
+            const mergedEngWeeks = mergeSavedEnglishWeeks(
               rawEnglishWeeks,
               INITIAL_ENGLISH_WEEK_PLANS
             );
-            setEnglishWeeks(mergedWeeks);
+            setEnglishWeeks(mergedEngWeeks);
           }
           showToast(
-            '🎉 成功恢复全量作战进度！已完整还原四科打卡记录、分科独立笔记与英语7周计划'
+            '🎉 成功恢复全量作战进度！已完整还原数二/408日计划、政治与英语7周规划及四科独立笔记'
           );
         } else {
           showToast('⚠️ 导入失败：文件格式不符合预期');
@@ -779,8 +1067,19 @@ export default function App() {
     plans.find((p) => p.date === todayDateStr) ||
     plans[0];
 
+  const [timelineJumpKey, setTimelineJumpKey] = useState<number>(0);
+
+  const handleNavigateToPoliticsTimeline = () => {
+    setSelectedDate(todayDateStr);
+    setTimelineInitialTrack('politics');
+    setTimelineJumpKey((prev) => prev + 1);
+    setActiveTab('timeline');
+  };
+
   const handleNavigateToEnglishTimeline = () => {
+    setSelectedDate(todayDateStr);
     setTimelineInitialTrack('english');
+    setTimelineJumpKey((prev) => prev + 1);
     setActiveTab('timeline');
   };
 
@@ -800,6 +1099,9 @@ export default function App() {
         onSelectTab={(tab) => {
           if (tab !== 'timeline') {
             setTimelineInitialTrack(undefined);
+          } else {
+            setSelectedDate(todayDateStr);
+            setTimelineJumpKey((prev) => prev + 1);
           }
           setActiveTab(tab);
         }}
@@ -815,6 +1117,7 @@ export default function App() {
           <DashboardOverview
             currentDayPlan={currentPlan}
             allPlans={plans}
+            politicsWeeks={politicsWeeks}
             englishWeeks={englishWeeks}
             todayDateStr={todayDateStr}
             onSelectDay={setSelectedDate}
@@ -823,13 +1126,24 @@ export default function App() {
             onToggleCsComplete={handleToggleCsComplete}
             onToggleEnglishComplete={handleToggleEnglishComplete}
             onTogglePoliticsComplete={handleTogglePoliticsComplete}
+            onTogglePoliticsSubTask={handleTogglePoliticsSubTask}
+            onTogglePoliticsAcceptance={handleTogglePoliticsAcceptance}
             onToggleEnglishSubTask={handleToggleEnglishSubTask}
             onSaveSubjectNote={handleSaveSubjectNote}
+            onSavePoliticsWeekNote={handleSavePoliticsWeekNote}
             onSaveEnglishWeekNote={handleSaveEnglishWeekNote}
             onSaveDayNotes={handleSaveDayNotes}
-            onNavigateToTab={setActiveTab}
+            onNavigateToTab={(tab) => {
+              if (tab === 'timeline') {
+                setSelectedDate(todayDateStr);
+                setTimelineJumpKey((prev) => prev + 1);
+              }
+              setActiveTab(tab);
+            }}
+            onNavigateToPoliticsTimeline={handleNavigateToPoliticsTimeline}
             onNavigateToEnglishTimeline={handleNavigateToEnglishTimeline}
             onOpenEditModal={handleOpenEditModal}
+            onOpenPoliticsWeekEditModal={setEditingPoliticsWeekPlan}
             onOpenEnglishWeekEditModal={setEditingEnglishWeekPlan}
             daysToExam={daysToExam}
             daysToMathPastPapers={daysToMathPastPapers}
@@ -841,21 +1155,27 @@ export default function App() {
         {activeTab === 'timeline' && (
           <DailyTimeline
             plans={plans}
+            politicsWeeks={politicsWeeks}
             englishWeeks={englishWeeks}
             selectedDate={selectedDate}
             todayDateStr={todayDateStr}
             initialTrack={timelineInitialTrack}
+            jumpTrigger={timelineJumpKey}
             onSelectDay={setSelectedDate}
             onJumpToToday={() => setSelectedDate(todayDateStr)}
             onToggleMathComplete={handleToggleMathComplete}
             onToggleCsComplete={handleToggleCsComplete}
             onToggleEnglishComplete={handleToggleEnglishComplete}
             onTogglePoliticsComplete={handleTogglePoliticsComplete}
+            onTogglePoliticsSubTask={handleTogglePoliticsSubTask}
+            onTogglePoliticsAcceptance={handleTogglePoliticsAcceptance}
             onToggleEnglishSubTask={handleToggleEnglishSubTask}
             onSaveSubjectNote={handleSaveSubjectNote}
+            onSavePoliticsWeekNote={handleSavePoliticsWeekNote}
             onSaveEnglishWeekNote={handleSaveEnglishWeekNote}
             onSaveDailyNote={handleSaveDayNotes}
             onOpenEditModal={handleOpenEditModal}
+            onOpenPoliticsWeekEditModal={setEditingPoliticsWeekPlan}
             onOpenEnglishWeekEditModal={setEditingEnglishWeekPlan}
           />
         )}
@@ -874,6 +1194,8 @@ export default function App() {
             <span>数二 53天真题决战</span>
             <span aria-hidden="true">·</span>
             <span>408 三轮交叉突破</span>
+            <span aria-hidden="true">·</span>
+            <span>政治 7周动态规划</span>
             <span aria-hidden="true">·</span>
             <span>英语二 7周冲刺</span>
             <span aria-hidden="true">·</span>
@@ -897,7 +1219,7 @@ export default function App() {
             <button
               onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-              title="导入之前导出的 JSON 进度备份（含四科进度、分科笔记与英语周安排）"
+              title="导入之前导出的 JSON 进度备份（含数二/408日计划、政治/英语7周动态规划及四科独立笔记）"
             >
               <Upload className="h-3.5 w-3.5" />
               <span>导入进度</span>
@@ -906,7 +1228,7 @@ export default function App() {
             <button
               onClick={handleExportData}
               className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
-              title="导出当前全量进度备份（含每日计划、英语7周计划与四科独立笔记）"
+              title="导出当前全量进度备份（含每日计划、政治7周动态规划、英语7周计划与四科独立笔记）"
             >
               <Download className="h-3.5 w-3.5" />
               <span>导出备份</span>
@@ -931,7 +1253,7 @@ export default function App() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Info className="h-4 w-4 text-amber-400" />
-                <span>数据存储与多端备份说明 (v10.0 全量引擎)</span>
+                <span>数据存储与多端备份说明 (v11.0 全量引擎)</span>
               </h3>
               <button
                 onClick={() => setShowStorageInfo(false)}
@@ -945,7 +1267,7 @@ export default function App() {
               <div className="rounded-lg bg-slate-950 p-3 border border-slate-800/80 space-y-1">
                 <span className="font-bold text-amber-400">1. 四科数据与独立笔记存放在哪里？</span>
                 <p>
-                  所有每日打卡进度、英语 7 周拆分打卡、自定义修改内容以及<strong className="text-white">四科彻底隔离的复盘笔记（数二日笔记 / 408日笔记 / 政治日笔记 / 英语周记）</strong>，均实时保存在当前浏览器的 <strong className="text-white">localStorage</strong> 中。
+                  所有数二/408每日打卡进度、政治 7 周动态规划（子项打卡+验收标准）、英语 7 周拆分打卡、自定义修改内容以及<strong className="text-white">四科彻底隔离的复盘笔记（数二日笔记 / 408日笔记 / 政治周记 / 英语周记）</strong>，均实时保存在当前浏览器的 <strong className="text-white">localStorage</strong> 中。
                 </p>
               </div>
 
@@ -954,7 +1276,7 @@ export default function App() {
                   2. 跨设备或换浏览器（全量备份导入与导出）
                 </span>
                 <p>
-                  点击底部的 <strong className="text-white">“导出备份”</strong> 会生成包含<strong className="text-teal-300">数二/408/政治每日排期与分科笔记 + 英语7周计划、子项打卡、自定义修改与英语周记</strong>的完整 JSON 文件；在任意设备上点击 <strong className="text-white">“导入进度”</strong> 即可 100% 无损恢复！
+                  点击底部的 <strong className="text-white">“导出备份”</strong> 会生成包含<strong className="text-teal-300">数二/408每日排期与分科日笔记 + 政治7周动态规划（含验收标准与政治周记） + 英语7周计划与英语周记</strong>的完整 JSON 文件；在任意设备上点击 <strong className="text-white">“导入进度”</strong> 即可 100% 无损恢复！
                 </p>
               </div>
             </div>
@@ -980,6 +1302,17 @@ export default function App() {
           initialSubjectTab={editingPlanData.subjectTab}
           onSave={handleSaveCustomPlan}
           onResetToDefault={handleResetDayPlan}
+        />
+      )}
+
+      {/* Dynamic Weekly Politics Schedule Edit Modal */}
+      {editingPoliticsWeekPlan && (
+        <PoliticsWeekEditModal
+          isOpen={Boolean(editingPoliticsWeekPlan)}
+          onClose={() => setEditingPoliticsWeekPlan(null)}
+          weekPlan={editingPoliticsWeekPlan}
+          onSave={handleSaveCustomPoliticsWeek}
+          onResetToDefault={handleResetPoliticsWeek}
         />
       )}
 
