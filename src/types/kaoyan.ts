@@ -209,3 +209,22 @@ export interface MindsetCard {
   actionProtocol: string[];
   quote: string;
 }
+
+export type PomodoroSubjectKey = 'math2' | '408' | 'english' | 'politics';
+
+export interface PomodoroSessionRecord {
+  id: string;
+  subject: PomodoroSubjectKey;
+  mode: 'countdown' | 'stopwatch';
+  taskLabel: string;
+  plannedMinutes?: number;
+  durationSeconds: number;
+  dateStr: string; // YYYY-MM-DD in East-8
+  formattedDate: string; // e.g. "11月18日"
+  startedAtTime: string; // e.g. "08:30"
+  endedAtTime: string; // e.g. "11:30"
+  isCompletedFull: boolean;
+  note?: string;
+  noteUpdatedAt?: string;
+}
+

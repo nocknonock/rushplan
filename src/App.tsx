@@ -9,6 +9,8 @@ import {
   EnglishWeekPlan,
   PoliticsWeekPlan,
   NoteSubjectTrack,
+  PomodoroSessionRecord,
+  PomodoroSubjectKey,
 } from './types/kaoyan';
 import { INITIAL_DAY_PLANS } from './data/scheduleData';
 import { INITIAL_ENGLISH_WEEK_PLANS } from './data/englishScheduleData';
@@ -52,6 +54,7 @@ const LEGACY_STORAGE_KEYS = [
 
 const ENGLISH_STORAGE_KEY = 'kaoyan_english_weeks_v1';
 const POLITICS_STORAGE_KEY = 'kaoyan_politics_weeks_v1';
+const POMODORO_STORAGE_KEY = 'kaoyan_pomodoro_sessions_v1';
 
 /**
  * Computes today's date in China Standard Time (东八区, Asia/Shanghai, UTC+8)
@@ -402,6 +405,21 @@ export default function App() {
     return mergeSavedPoliticsWeeks(null, INITIAL_POLITICS_WEEK_PLANS, plans);
   });
 
+  const [pomodoroSessions, setPomodoroSessions] = useState<PomodoroSessionRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(POMODORO_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    return [];
+  });
+
   // Automatically default to today's date upon refresh or load
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return getTodayOrEffectiveDate(INITIAL_DAY_PLANS);
@@ -445,6 +463,15 @@ export default function App() {
       // storage error
     }
   }, [politicsWeeks]);
+
+  // Sync Pomodoro session records to local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem(POMODORO_STORAGE_KEY, JSON.stringify(pomodoroSessions));
+    } catch {
+      // storage error
+    }
+  }, [pomodoroSessions]);
 
   // Periodic check for schedule nodes arrival to trigger Windows desktop notification
   useEffect(() => {
@@ -933,7 +960,50 @@ export default function App() {
     showToast(`🔄 已将英语【第${initWeek.weekNumber}周】恢复为默认排期`);
   };
 
-  // Export progress JSON (v11.0) - includes daily plans, isolated subject notes, AND weekly Politics + English plans/notes/custom edits
+  const handleAddPomodoroSession = (session: PomodoroSessionRecord) => {
+    setPomodoroSessions((prev) => [session, ...prev]);
+    const subjLabel =
+      session.subject === 'math2'
+        ? '数学二'
+        : session.subject === '408'
+        ? '408专业课'
+        : session.subject === 'english'
+        ? '考研英语'
+        : '考研政治';
+    showToast(`⏱️ 已保存【${subjLabel} · ${session.taskLabel}】专注计时记录`);
+  };
+
+  const handleUpdatePomodoroSessionNote = (sessionId: string, note: string) => {
+    const chinaNow = getChinaDateInfo();
+    const stamp = `${chinaNow.formattedDate} ${chinaNow.timeStr}`;
+    const trimmed = note.trim();
+    setPomodoroSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId
+          ? {
+              ...s,
+              note: trimmed || undefined,
+              noteUpdatedAt: trimmed ? stamp : undefined,
+            }
+          : s
+      )
+    );
+    showToast(trimmed ? '📝 已保存本次计时笔记' : '🗑️ 已清空该条计时笔记');
+  };
+
+  const handleDeletePomodoroSession = (sessionId: string) => {
+    setPomodoroSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    showToast('🗑️ 已删除该条计时记录');
+  };
+
+  const handleClearSubjectPomodoroSessions = (subject: PomodoroSubjectKey | 'all') => {
+    setPomodoroSessions((prev) =>
+      subject === 'all' ? [] : prev.filter((s) => s.subject !== subject)
+    );
+    showToast('🗑️ 已清空所选科目的计时记录');
+  };
+
+  // Export progress JSON (v11.0) - includes daily plans, isolated subject notes, weekly Politics + English plans, AND Pomodoro sessions
   const handleExportData = () => {
     const customizedDaysList = plans.filter((p) => p.isCustomized);
     const customizedPoliticsWeeksList = politicsWeeks.filter((w) => w.isCustomized);
@@ -962,10 +1032,12 @@ export default function App() {
           (acc, w) => acc + w.subTasks.filter((t) => t.isCompleted).length,
           0
         ),
+        totalPomodoroSessions: pomodoroSessions.length,
       },
       plans: plans,
       politicsWeeks: politicsWeeks,
       englishWeeks: englishWeeks,
+      pomodoroSessions: pomodoroSessions,
     };
     const dataStr =
       'data:text/json;charset=utf-8,' +
@@ -980,7 +1052,7 @@ export default function App() {
     downloadAnchor.click();
     downloadAnchor.remove();
     showToast(
-      `作战数据已全量导出（含数二/408日计划、政治7周动态规划、英语7周计划与四科独立笔记）`
+      `作战数据已全量导出（含数二/408日计划、政英7周规划、番茄钟计时档案与笔记）`
     );
   };
 
@@ -1011,6 +1083,9 @@ export default function App() {
           if (Array.isArray(parsed.englishWeeks)) {
             rawEnglishWeeks = parsed.englishWeeks;
           }
+          if (Array.isArray(parsed.pomodoroSessions)) {
+            setPomodoroSessions(parsed.pomodoroSessions);
+          }
         }
 
         if (rawPlans || rawPoliticsWeeks || rawEnglishWeeks) {
@@ -1040,7 +1115,7 @@ export default function App() {
             setEnglishWeeks(mergedEngWeeks);
           }
           showToast(
-            '🎉 成功恢复全量作战进度！已完整还原数二/408日计划、政治与英语7周规划及四科独立笔记'
+            '🎉 成功恢复全量作战进度！已完整还原日计划、政英7周规划、计时档案与独立笔记'
           );
         } else {
           showToast('⚠️ 导入失败：文件格式不符合预期');
@@ -1180,7 +1255,15 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'workstation' && <DailyWorkstation />}
+        {activeTab === 'workstation' && (
+          <DailyWorkstation
+            sessions={pomodoroSessions}
+            onAddSession={handleAddPomodoroSession}
+            onUpdateSessionNote={handleUpdatePomodoroSessionNote}
+            onDeleteSession={handleDeletePomodoroSession}
+            onClearSubjectSessions={handleClearSubjectPomodoroSessions}
+          />
+        )}
 
         {activeTab === 'mindset' && <MindsetEmergencyBunker />}
       </main>
