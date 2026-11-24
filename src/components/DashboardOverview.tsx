@@ -381,10 +381,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onOpenEditModal,
   onOpenEnglishWeekEditModal,
   onOpenPoliticsWeekEditModal,
-  daysToExam,
-  daysToMathPastPapers,
-  daysToCsPastPapers,
-  daysToXiao8,
 }) => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const [activeNoteTab, setActiveNoteTab] = useState<DashboardNoteTab>('math');
@@ -543,237 +539,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </div>
       </section>
 
-      {/* 2. Four Tactical Countdowns */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all hover:border-slate-700">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>数二真题模考 (10.27)</span>
-            <span className="font-mono text-amber-400 font-semibold">
-              {daysToMathPastPapers > 0 ? `倒计时 ${daysToMathPastPapers} 天` : '已开战'}
-            </span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-amber-400">
-              {daysToMathPastPapers > 0 ? daysToMathPastPapers : '已开战'}
-            </span>
-            <span className="text-xs text-slate-400">
-              {daysToMathPastPapers > 0 ? '天后启动53天真题决战' : '（10.27-12.18闭卷模考）'}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-2 truncate">
-            一阶段(硬仗练兵) → 二阶段(新大纲抗压) → 三阶段(冲刺封箱)
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all hover:border-slate-700">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>408全真套卷 (11.11)</span>
-            <span className="font-mono text-cyan-400 font-semibold">三轮交叉</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-cyan-400">
-              {daysToCsPastPapers > 0 ? daysToCsPastPapers : '已开战'}
-            </span>
-            <span className="text-xs text-slate-400">
-              {daysToCsPastPapers > 0 ? '天后开启2010-2025真题' : '（2010-2025三轮突破）'}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-2 truncate">
-            每4套真题配3天二轮突破 + 2套模拟卷 + 6天三轮回顾
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all hover:border-slate-700">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>政治《肖八》一轮 (11.10)</span>
-            <span className="font-mono text-rose-400 font-semibold">7周动态</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-rose-400">
-              {daysToXiao8 > 0 ? daysToXiao8 : '已开战'}
-            </span>
-            <span className="text-xs text-slate-400">
-              {daysToXiao8 > 0 ? '天后启动肖八第一轮' : '（肖八两轮→肖四主观题）'}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-2 truncate">
-            第1周马原+四大线索 → 第2-3周肖八两轮 → 第5-7周肖四背诵
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 transition-all hover:border-slate-700">
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-            <span>考研初试决战 (12.19-20)</span>
-            <span className="font-mono text-emerald-400 font-semibold">全国统一</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl sm:text-3xl font-extrabold font-mono tabular-nums text-emerald-400">
-              {daysToExam}
-            </span>
-            <span className="text-xs text-slate-400">天决战紫禁之巅</span>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-2 truncate">
-            12.19 政治/英语 → 12.20 数学二/408，一战成硕！
-          </p>
-        </div>
-      </section>
-
-      {/* 3. Four-Subject Progress Meters (Math 2 Daily, 408 Daily, Politics Weekly, English Weekly) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Math 2 Status */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-              <h3 className="text-sm font-semibold text-white">
-                数学二 (150分) · 53天真题与全真模考决战 (按日)
-              </h3>
-            </div>
-            <span className="text-xs font-mono tabular-nums text-amber-400 font-bold">
-              {completedMathTasks} / {totalMathTasks} 天完成 ({mathPercent}%)
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
-            <div
-              className="h-full bg-amber-400 transition-all duration-300"
-              style={{ width: `${(completedMathTasks / Math.max(totalMathTasks, 1)) * 100}%` }}
-            />
-          </div>
-          <div className="text-xs text-slate-400 space-y-1">
-            <p>
-              <strong className="text-amber-400">今日模考/订正：</strong>
-              <span className="text-slate-200 font-medium">
-                {currentDayPlan.math2Task?.title || '真题套卷模考'}
-              </span>
-            </p>
-            <p className="text-slate-500">
-              纪律：上午 08:30—11:30 严格闭卷掐表；隔天遮住答案在白纸上独立重写全套错题！
-            </p>
-          </div>
-        </div>
-
-        {/* 408 Status */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
-              <h3 className="text-sm font-semibold text-white">
-                408 计算机专业课 (150分) · 74天全景特种兵 (按日)
-              </h3>
-            </div>
-            <span className="text-xs font-mono tabular-nums text-cyan-400 font-bold">
-              {completedCsTasks} / {totalCsTasks} 天完成 ({csPercent}%)
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
-            <div
-              className="h-full bg-cyan-400 transition-all duration-300"
-              style={{ width: `${(completedCsTasks / Math.max(totalCsTasks, 1)) * 100}%` }}
-            />
-          </div>
-          <div className="text-xs text-slate-400 space-y-1">
-            <p>
-              <strong className="text-cyan-400">当前主攻：</strong>
-              <span className="text-slate-200 font-medium">
-                {currentDayPlan.csTask?.phase} · {currentDayPlan.csTask?.title}
-              </span>
-            </p>
-            <p className="text-slate-500">
-              纪律：计网速通(11.3-10) → 11.11起2010-2025真题一轮二轮交叉突破与三轮回顾。
-            </p>
-          </div>
-        </div>
-
-        {/* Politics Status (Weekly Structure) */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-              <h3 className="text-sm font-semibold text-white">
-                考研政治 (100分) · 7周动态规划与肖八/肖四攻坚 (按周)
-              </h3>
-            </div>
-            <span className="text-xs font-mono tabular-nums text-rose-300 font-bold">
-              {completedPoliticsSubTasks} / {totalPoliticsSubTasks} 项完成 ({politicsPercent}%)
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
-            <div
-              className="h-full bg-rose-400 transition-all duration-300"
-              style={{
-                width: `${(completedPoliticsSubTasks / Math.max(totalPoliticsSubTasks, 1)) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="text-xs text-slate-400 space-y-1">
-            <p className="flex items-center justify-between gap-2">
-              <span>
-                <strong className="text-rose-300">
-                  本周进度 (第{currentPoliticsWeek.weekNumber}周 {currentPoliticsWeek.dateRange})：
-                </strong>
-                <span className="text-slate-200 font-medium">
-                  任务 {currentPoliticsWeekDoneSub}/{currentPoliticsWeekTotalSub} 项 ({currentPoliticsWeekPct}%) · 验收 {currentPoliticsWeekDoneAcc}/{currentPoliticsWeekTotalAcc}
-                </span>
-              </span>
-              <button
-                onClick={onNavigateToPoliticsTimeline}
-                className="text-rose-300 hover:text-rose-200 underline underline-offset-2 text-[11px] shrink-0 cursor-pointer"
-              >
-                7周视图 →
-              </button>
-            </p>
-            <p className="text-slate-500">
-              纪律：第1周恢复基础(马原+四大线索) → 第2-3周肖八两轮 → 第4周选择巩固 → 第5-7周肖四背诵。
-            </p>
-          </div>
-        </div>
-
-        {/* English II Status (Weekly Structure) */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-teal-400" />
-              <h3 className="text-sm font-semibold text-white">
-                考研英语二 (100分) · 7周全题型与三轮全真模考 (按周)
-              </h3>
-            </div>
-            <span className="text-xs font-mono tabular-nums text-teal-300 font-bold">
-              {completedEnglishSubTasks} / {totalEnglishSubTasks} 项完成 ({englishPercent}%)
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
-            <div
-              className="h-full bg-teal-400 transition-all duration-300"
-              style={{
-                width: `${(completedEnglishSubTasks / Math.max(totalEnglishSubTasks, 1)) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="text-xs text-slate-400 space-y-1">
-            <p className="flex items-center justify-between gap-2">
-              <span>
-                <strong className="text-teal-300">
-                  本周进度 (第{currentEnglishWeek.weekNumber}周 {currentEnglishWeek.dateRange})：
-                </strong>
-                <span className="text-slate-200 font-medium">
-                  已完成 {currentWeekDoneSub}/{currentWeekTotalSub} 项 ({currentWeekPct}%)
-                </span>
-              </span>
-              <button
-                onClick={onNavigateToEnglishTimeline}
-                className="text-teal-300 hover:text-teal-200 underline underline-offset-2 text-[11px] shrink-0 cursor-pointer"
-              >
-                7周视图 →
-              </button>
-            </p>
-            <p className="text-slate-500">
-              纪律：作文-石磊鹏 · 翻译-唐静 · 完型-易熙人 · 新题型-刘琦；模考日 11.22 / 12.06 / 12.13。
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Verbatim Daily Schedule Table */}
+      {/* 2. Verbatim Daily Schedule Table */}
       <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
           <div className="flex items-center gap-2.5">
@@ -1713,6 +1479,161 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             >
               进入心理急救箱 →
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Four-Subject Progress Meters (Math 2 Daily, 408 Daily, Politics Weekly, English Weekly) */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Math 2 Status */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <h3 className="text-sm font-semibold text-white">
+                数学二 (150分) · 53天真题与全真模考决战 (按日)
+              </h3>
+            </div>
+            <span className="text-xs font-mono tabular-nums text-amber-400 font-bold">
+              {completedMathTasks} / {totalMathTasks} 天完成 ({mathPercent}%)
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
+            <div
+              className="h-full bg-amber-400 transition-all duration-300"
+              style={{ width: `${(completedMathTasks / Math.max(totalMathTasks, 1)) * 100}%` }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 space-y-1">
+            <p>
+              <strong className="text-amber-400">今日模考/订正：</strong>
+              <span className="text-slate-200 font-medium">
+                {currentDayPlan.math2Task?.title || '真题套卷模考'}
+              </span>
+            </p>
+            <p className="text-slate-500">
+              纪律：上午 08:30—11:30 严格闭卷掐表；隔天遮住答案在白纸上独立重写全套错题！
+            </p>
+          </div>
+        </div>
+
+        {/* 408 Status */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
+              <h3 className="text-sm font-semibold text-white">
+                408 计算机专业课 (150分) · 74天全景特种兵 (按日)
+              </h3>
+            </div>
+            <span className="text-xs font-mono tabular-nums text-cyan-400 font-bold">
+              {completedCsTasks} / {totalCsTasks} 天完成 ({csPercent}%)
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
+            <div
+              className="h-full bg-cyan-400 transition-all duration-300"
+              style={{ width: `${(completedCsTasks / Math.max(totalCsTasks, 1)) * 100}%` }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 space-y-1">
+            <p>
+              <strong className="text-cyan-400">当前主攻：</strong>
+              <span className="text-slate-200 font-medium">
+                {currentDayPlan.csTask?.phase} · {currentDayPlan.csTask?.title}
+              </span>
+            </p>
+            <p className="text-slate-500">
+              纪律：计网速通(11.3-10) → 11.11起2010-2025真题一轮二轮交叉突破与三轮回顾。
+            </p>
+          </div>
+        </div>
+
+        {/* Politics Status (Weekly Structure) */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+              <h3 className="text-sm font-semibold text-white">
+                考研政治 (100分) · 7周动态规划与肖八/肖四攻坚 (按周)
+              </h3>
+            </div>
+            <span className="text-xs font-mono tabular-nums text-rose-300 font-bold">
+              {completedPoliticsSubTasks} / {totalPoliticsSubTasks} 项完成 ({politicsPercent}%)
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
+            <div
+              className="h-full bg-rose-400 transition-all duration-300"
+              style={{
+                width: `${(completedPoliticsSubTasks / Math.max(totalPoliticsSubTasks, 1)) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 space-y-1">
+            <p className="flex items-center justify-between gap-2">
+              <span>
+                <strong className="text-rose-300">
+                  本周进度 (第{currentPoliticsWeek.weekNumber}周 {currentPoliticsWeek.dateRange})：
+                </strong>
+                <span className="text-slate-200 font-medium">
+                  任务 {currentPoliticsWeekDoneSub}/{currentPoliticsWeekTotalSub} 项 ({currentPoliticsWeekPct}%) · 验收 {currentPoliticsWeekDoneAcc}/{currentPoliticsWeekTotalAcc}
+                </span>
+              </span>
+              <button
+                onClick={onNavigateToPoliticsTimeline}
+                className="text-rose-300 hover:text-rose-200 underline underline-offset-2 text-[11px] shrink-0 cursor-pointer"
+              >
+                7周视图 →
+              </button>
+            </p>
+            <p className="text-slate-500">
+              纪律：第1周恢复基础(马原+四大线索) → 第2-3周肖八两轮 → 第4周选择巩固 → 第5-7周肖四背诵。
+            </p>
+          </div>
+        </div>
+
+        {/* English II Status (Weekly Structure) */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-teal-400" />
+              <h3 className="text-sm font-semibold text-white">
+                考研英语二 (100分) · 7周全题型与三轮全真模考 (按周)
+              </h3>
+            </div>
+            <span className="text-xs font-mono tabular-nums text-teal-300 font-bold">
+              {completedEnglishSubTasks} / {totalEnglishSubTasks} 项完成 ({englishPercent}%)
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
+            <div
+              className="h-full bg-teal-400 transition-all duration-300"
+              style={{
+                width: `${(completedEnglishSubTasks / Math.max(totalEnglishSubTasks, 1)) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="text-xs text-slate-400 space-y-1">
+            <p className="flex items-center justify-between gap-2">
+              <span>
+                <strong className="text-teal-300">
+                  本周进度 (第{currentEnglishWeek.weekNumber}周 {currentEnglishWeek.dateRange})：
+                </strong>
+                <span className="text-slate-200 font-medium">
+                  已完成 {currentWeekDoneSub}/{currentWeekTotalSub} 项 ({currentWeekPct}%)
+                </span>
+              </span>
+              <button
+                onClick={onNavigateToEnglishTimeline}
+                className="text-teal-300 hover:text-teal-200 underline underline-offset-2 text-[11px] shrink-0 cursor-pointer"
+              >
+                7周视图 →
+              </button>
+            </p>
+            <p className="text-slate-500">
+              纪律：作文-石磊鹏 · 翻译-唐静 · 完型-易熙人 · 新题型-刘琦；模考日 11.22 / 12.06 / 12.13。
+            </p>
           </div>
         </div>
       </section>
