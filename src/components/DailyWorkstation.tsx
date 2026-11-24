@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DAILY_ROUTINE_SLOTS } from '../data/mindsetCards';
+import { MOCK_SCHEDULE_SLOTS, NON_MOCK_SCHEDULE_SLOTS } from './DashboardOverview';
 import { PomodoroSessionRecord, PomodoroSubjectKey } from '../types/kaoyan';
 import { soundManager } from '../utils/sound';
 import { getChinaDateInfo } from '../utils/chinaDate';
+import { desktopNotificationManager } from '../utils/desktopNotification';
 import {
   Clock,
   Play,
@@ -254,6 +255,14 @@ export const DailyWorkstation: React.FC<DailyWorkstationProps> = ({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const [activeStepTab, setActiveStepTab] = useState<'math2' | '408'>('math2');
   const [customInputMinutes, setCustomInputMinutes] = useState<string>('');
+  const [scheduleMode, setScheduleMode] = useState<'mock' | 'non_mock'>(() =>
+    desktopNotificationManager.getScheduleMode()
+  );
+
+  const handleWorkstationScheduleMode = (mode: 'mock' | 'non_mock') => {
+    setScheduleMode(mode);
+    desktopNotificationManager.setScheduleMode(mode);
+  };
 
   // Pre-session / live-session note input
   const [draftSessionNote, setDraftSessionNote] = useState<string>('');
@@ -1612,27 +1621,64 @@ export const DailyWorkstation: React.FC<DailyWorkstationProps> = ({
         )}
       </section>
 
-      {/* 3. 24-Hour Scientific Schedule Timeline Blocks */}
+      {/* 3. 24-Hour Scientific Schedule Timeline Blocks (Synced with Mock / Review Day) */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-400" />
-            <span>每日 24H 科学时间预算表 (考场作息严格对齐)</span>
-          </h2>
-          <span className="text-xs text-slate-400">按科目分值与抗压节奏严格切分</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-400" />
+              <span>每日科学时间预算表 (模考日 / 复盘日双轨同步)</span>
+            </h2>
+            <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+              <button
+                type="button"
+                onClick={() => handleWorkstationScheduleMode('mock')}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                  scheduleMode === 'mock'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                模考日
+              </button>
+              <button
+                type="button"
+                onClick={() => handleWorkstationScheduleMode('non_mock')}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
+                  scheduleMode === 'non_mock'
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                复盘日 (非模考)
+              </button>
+            </div>
+          </div>
+          <span className="text-xs text-slate-400">
+            07:15 唤醒 · 21:15 后强制降频 · 22:30 准时收书离场
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {DAILY_ROUTINE_SLOTS.map((slot, index) => {
-            const isMath = slot.subject === 'math2';
-            const isCs = slot.subject === 'co';
-            const isEnglish = slot.subject === 'english';
-            const isPolitics = slot.subject === 'politics';
-            const isReview = slot.subject === 'review';
+          {(scheduleMode === 'mock' ? MOCK_SCHEDULE_SLOTS : NON_MOCK_SCHEDULE_SLOTS).map((slot) => {
+            const isMath = slot.subjectCategory === 'math';
+            const isCs = slot.subjectCategory === 'cs';
+            const isEnglish = slot.subjectCategory === 'english';
+            const isPolitics = slot.subjectCategory === 'politics';
+            const titleToneClass =
+              slot.titleTone === 'red'
+                ? 'text-rose-300'
+                : slot.titleTone === 'orange'
+                ? 'text-orange-300'
+                : slot.titleTone === 'green'
+                ? 'text-emerald-300'
+                : slot.titleTone === 'cyan'
+                ? 'text-cyan-300'
+                : 'text-slate-100';
 
             return (
               <div
-                key={index}
+                key={slot.id}
                 className={`rounded-xl border p-4 flex flex-col justify-between transition-all ${
                   isMath
                     ? 'border-amber-500/40 bg-amber-950/20'
@@ -1641,34 +1687,33 @@ export const DailyWorkstation: React.FC<DailyWorkstationProps> = ({
                     : isEnglish
                     ? 'border-emerald-500/40 bg-emerald-950/20'
                     : isPolitics
-                    ? 'border-red-500/25 bg-red-950/15'
-                    : isReview
-                    ? 'border-purple-500/40 bg-purple-950/20'
+                    ? 'border-rose-500/30 bg-rose-950/15'
                     : 'border-slate-800 bg-slate-900/40'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono font-bold text-white">
+                    <span className="text-xs font-mono tabular-nums font-bold text-white">
                       {slot.timeRange}
                     </span>
                     <span className="text-[11px] font-mono text-slate-400">
-                      {slot.durationHours} 小时
+                      {slot.badge}
                     </span>
                   </div>
 
-                  <h3 className="text-xs font-bold text-slate-100 mb-1.5 leading-snug">
-                    {slot.title}
+                  <h3 className={`text-xs font-bold mb-2 leading-snug ${titleToneClass}`}>
+                    {slot.subjectTitle}
                   </h3>
-
-                  <p className="text-[11px] text-slate-400 leading-relaxed mb-3">
-                    {slot.mindset}
-                  </p>
                 </div>
 
                 <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-300">
-                  <span className="text-slate-500 font-medium">执行指令：</span>
-                  <p className="mt-0.5 text-slate-300 leading-snug">{slot.keyAction}</p>
+                  <span className="text-slate-500 font-medium">改造逻辑与刚性要求：</span>
+                  <p className="mt-0.5 text-slate-300 leading-snug">
+                    {slot.isKeyChange && (
+                      <span className="text-amber-300 font-bold mr-1">关键改动：</span>
+                    )}
+                    {slot.content}
+                  </p>
                 </div>
               </div>
             );

@@ -65,11 +65,13 @@ interface DashboardOverviewProps {
 }
 
 // User's verbatim daily execution schedule
-interface ScheduleSlot {
+export interface ScheduleSlot {
   id: string;
   timeRange: string;
   subjectTitle: string;
   subjectCategory: 'math' | 'cs' | 'english' | 'politics' | 'rest';
+  titleTone?: 'red' | 'orange' | 'green' | 'cyan';
+  isKeyChange?: boolean;
   badge: string;
   content: string;
   startMinutes: number;
@@ -80,211 +82,280 @@ interface ScheduleSlot {
 export const MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
   {
     id: 'mock-slot-1',
+    timeRange: '07:15 – 08:00',
+    subjectTitle: '起床 / 洗漱 / 早餐 / 通勤',
+    subjectCategory: 'rest',
+    badge: '生物钟启动',
+    content: '7:45前完成咖啡因摄入；通勤路上见光唤醒大脑。',
+    startMinutes: 7 * 60 + 15,
+    endMinutes: 8 * 60,
+  },
+  {
+    id: 'mock-slot-2',
     timeRange: '08:00 – 08:30',
-    subjectTitle: '政治 / 英语早读 0.5h',
-    subjectCategory: 'politics',
-    badge: '早读唤醒',
-    content:
-      '唤醒大脑：快速过一遍英语高频词或政治背诵手册核心提要，避免一上来直接进数学考场导致前30分钟大脑发懵。利用午饭前的碎片时间刷政治小程序或肖八选择题并直接复盘错题。',
+    subjectTitle: '英语早读 (0.5h)',
+    subjectCategory: 'english',
+    badge: '大脑开机',
+    content: '仅背诵英语二大小作文模板、核心高频词，为大脑开机。',
     startMinutes: 8 * 60,
     endMinutes: 8 * 60 + 30,
   },
   {
-    id: 'mock-slot-2',
+    id: 'mock-slot-3',
     timeRange: '08:30 – 11:30',
-    subjectTitle: '数学（核心块：3h）',
+    subjectTitle: '数学二全真模考 (3h)',
     subjectCategory: 'math',
-    badge: '真题模考·重中之重',
-    content:
-      '全真掐表模考 / 深度订正。做套卷日：严格掐表做真题或张宇卷；复盘日：重做前一天套卷的错题 + 专项补漏薄弱章节。',
+    titleTone: 'red',
+    badge: '全真模考·重中之重',
+    content: '严格卡表3小时，期间不翻书、不看手机。',
     startMinutes: 8 * 60 + 30,
     endMinutes: 11 * 60 + 30,
   },
   {
-    id: 'mock-slot-3',
-    timeRange: '11:30 – 12:30',
-    subjectTitle: '即时复盘 + 动态时间',
-    subjectCategory: 'math',
-    badge: '趁热打铁',
-    content: '数学因为基本公式/定理等的错题，及时回忆与翻看讲义定理，加深考场条件反射。',
-    startMinutes: 11 * 60 + 30,
-    endMinutes: 12 * 60 + 30,
-  },
-  {
     id: 'mock-slot-4',
-    timeRange: '12:30 – 13:30',
-    subjectTitle: '英语 1h',
-    subjectCategory: 'english',
-    badge: '精读保持手感',
+    timeRange: '11:30 – 12:15',
+    subjectTitle: '数学即时复盘 (0.75h)',
+    subjectCategory: 'math',
+    titleTone: 'orange',
+    isKeyChange: true,
+    badge: '关键改动·趁热打铁',
     content:
-      '保持阅读手感（每天1篇精读复盘）+ 11月起加入大小作文模板整理与仿写、新题型/翻译训练。',
-    startMinutes: 12 * 60 + 30,
-    endMinutes: 13 * 60 + 30,
+      '趁热对答案，必须在这45分钟内搞定所有选填错题和中档计算错题，只留1-2道压轴难题到傍晚。',
+    startMinutes: 11 * 60 + 30,
+    endMinutes: 12 * 60 + 15,
   },
   {
     id: 'mock-slot-5',
-    timeRange: '13:30 – 17:30',
-    subjectTitle: '408（主力块：4h）',
-    subjectCategory: 'cs',
-    badge: '专业课攻坚',
-    content: '抓紧收尾一轮/二轮滞后科目，进入 408 真题套卷演练与计组/OS大题专项突破。',
-    startMinutes: 13 * 60 + 30,
-    endMinutes: 17 * 60 + 30,
+    timeRange: '12:15 – 13:30',
+    subjectTitle: '午餐 + 强制午休 (1.25h)',
+    subjectCategory: 'rest',
+    titleTone: 'green',
+    badge: '强制午休蓄能',
+    content: '12:50前吃完饭，12:55定闹钟午休25-30分钟，13:25起并用冷水洗脸。',
+    startMinutes: 12 * 60 + 15,
+    endMinutes: 13 * 60 + 30,
   },
   {
     id: 'mock-slot-6',
-    timeRange: '17:30 – 18:30',
-    subjectTitle: '晚饭 + 休息放空',
-    subjectCategory: 'rest',
-    badge: '缓存清零',
-    content: '离开书桌散步或短暂闭目养神 10 分钟，给大脑清零缓存，恢复体能精力。',
-    startMinutes: 17 * 60 + 30,
-    endMinutes: 18 * 60 + 30,
+    timeRange: '13:30 – 14:00',
+    subjectTitle: '英语二轻度训练 (0.5h)',
+    subjectCategory: 'english',
+    badge: '大脑预热缓冲',
+    content: '做1篇完形填空或新题型，作为午睡后到408模考前的“大脑预热缓冲”。',
+    startMinutes: 13 * 60 + 30,
+    endMinutes: 14 * 60,
   },
   {
     id: 'mock-slot-7',
-    timeRange: '18:30 – 21:30',
-    subjectTitle: '408 追赶 3h',
+    timeRange: '14:00 – 17:00',
+    subjectTitle: '408全真模考 (3h)',
     subjectCategory: 'cs',
-    badge: '落后模块专项突破',
-    content: '专门攻克 408 落后模块（计组流水线/数据通路、OS PV信号量大题、计网协议分析）。',
-    startMinutes: 18 * 60 + 30,
-    endMinutes: 21 * 60 + 30,
+    titleTone: 'cyan',
+    isKeyChange: true,
+    badge: '关键改动·3h取舍训练',
+    content: '原计划4h太长，考场只有3h。必须训练在3小时内完成408套卷的取舍能力。',
+    startMinutes: 14 * 60,
+    endMinutes: 17 * 60,
   },
   {
     id: 'mock-slot-8',
-    timeRange: '21:30 – 23:30',
-    subjectTitle: '数学（复盘块）2h',
-    subjectCategory: 'math',
-    badge: '白纸重做·不开新卷',
-    content:
-      '只做复盘，不开新卷！白纸重做当天上午套卷的卡壳题、整理条件反射笔记；若当天已复盘完，直接把这半小时让给 408。',
-    startMinutes: 21 * 60 + 30,
-    endMinutes: 23 * 60 + 20,
+    timeRange: '17:00 – 17:45',
+    subjectTitle: '408选择题即时复盘 (0.75h)',
+    subjectCategory: 'cs',
+    titleTone: 'orange',
+    badge: '40道选择速查',
+    content: '考完立刻批改，45分钟内把40道选择题的错因快速过一遍。',
+    startMinutes: 17 * 60,
+    endMinutes: 17 * 60 + 45,
   },
   {
     id: 'mock-slot-9',
-    timeRange: '23:20 – 24:00',
-    subjectTitle: '政治背诵',
+    timeRange: '17:45 – 18:30',
+    subjectTitle: '晚餐 + 碎片刷题 (0.75h)',
     subjectCategory: 'politics',
-    badge: '下册线索/肖四背诵',
-    content: '22:20–23:00 / 23:20 政治背诵手册核心专题或 12月起肖四主观题背诵。',
-    startMinutes: 23 * 60 + 20,
+    badge: '政治碎片刷题',
+    content: '吃饭排队、散步回自习室期间，用手机小程序刷政治选择题（消灭原23:30的任务）。',
+    startMinutes: 17 * 60 + 45,
+    endMinutes: 18 * 60 + 30,
+  },
+  {
+    id: 'mock-slot-10',
+    timeRange: '18:30 – 19:30',
+    subjectTitle: '408大题复盘与追赶 (1.75h)',
+    subjectCategory: 'cs',
+    titleTone: 'cyan',
+    badge: '7道大题专项追赶',
+    content: '集中火力复盘下午模考的7道大题，并针对暴露出的薄弱章节进行专项追赶。',
+    startMinutes: 18 * 60 + 30,
+    endMinutes: 19 * 60 + 30,
+  },
+  {
+    id: 'mock-slot-11',
+    timeRange: '19:30 – 21:15',
+    subjectTitle: '数学深度复盘收尾 (1h)',
+    subjectCategory: 'math',
+    titleTone: 'red',
+    badge: '压轴难题结清',
+    content: '攻克上午遗留的1-2道压轴大题，归纳题型方法，数学任务彻底结清。',
+    startMinutes: 19 * 60 + 30,
+    endMinutes: 21 * 60 + 15,
+  },
+  {
+    id: 'mock-slot-12',
+    timeRange: '21:15 – 22:30',
+    subjectTitle: '降频记忆块 (1.25h)',
+    subjectCategory: 'politics',
+    titleTone: 'green',
+    isKeyChange: true,
+    badge: '关键改动·21:15降频',
+    content:
+      '21:15后严禁推演数学和408复杂逻辑！此时间段用于：政治分析题背诵 + 408纯概念背诵（OS/计网）+ 政治错题回顾。',
+    startMinutes: 21 * 60 + 15,
+    endMinutes: 22 * 60 + 30,
+  },
+  {
+    id: 'mock-slot-13',
+    timeRange: '22:30',
+    subjectTitle: '准时收书离场',
+    subjectCategory: 'rest',
+    titleTone: 'red',
+    badge: '23:30闭眼入睡',
+    content: '21:00左右在自习室吃一点垫肚子的食物；回寝后只洗漱不进食，23:30闭眼。',
+    startMinutes: 22 * 60 + 30,
     endMinutes: 24 * 60,
   },
 ];
 
-// 非模考日作息时刻表 (Non-Mock Day)
+// 复盘日（非模考日）作息时刻表 (Review / Non-Mock Day)
 export const NON_MOCK_SCHEDULE_SLOTS: ScheduleSlot[] = [
   {
     id: 'nonmock-slot-1',
+    timeRange: '07:15 – 08:00',
+    subjectTitle: '起床 / 洗漱 / 早餐 / 通勤',
+    subjectCategory: 'rest',
+    badge: '生物钟一致',
+    content: '同模考日，保持生物钟绝对一致。',
+    startMinutes: 7 * 60 + 15,
+    endMinutes: 8 * 60,
+  },
+  {
+    id: 'nonmock-slot-2',
     timeRange: '08:00 – 08:30',
-    subjectTitle: '政治 / 英语早读',
+    subjectTitle: '政治 / 英语早读 (0.5h)',
     subjectCategory: 'politics',
     badge: '早读唤醒',
-    content: '政治背诵手册回顾 15 分钟 + 英语词汇 15 分钟',
+    content: '朗读背诵政治核心考点或英语范文。',
     startMinutes: 8 * 60,
     endMinutes: 8 * 60 + 30,
   },
   {
-    id: 'nonmock-slot-2',
+    id: 'nonmock-slot-3',
     timeRange: '08:30 – 11:30',
-    subjectTitle: '数学 3h',
+    subjectTitle: '数学专项攻坚 (3h)',
     subjectCategory: 'math',
-    badge: '专项补漏·错题重做',
-    content: '专项训练、错题重做、薄弱知识点补漏',
+    titleTone: 'red',
+    badge: '薄弱板块集中刷题',
+    content: '针对薄弱板块（如高数中值定理、微分方程、线代二次型）集中刷题与二刷错题。',
     startMinutes: 8 * 60 + 30,
     endMinutes: 11 * 60 + 30,
   },
   {
-    id: 'nonmock-slot-3',
-    timeRange: '11:30 – 12:00',
-    subjectTitle: '数学复盘',
-    subjectCategory: 'math',
-    badge: '总结沉淀',
-    content: '总结上午错误，回忆关键公式与解题方法',
-    startMinutes: 11 * 60 + 30,
-    endMinutes: 12 * 60,
-  },
-  {
     id: 'nonmock-slot-4',
-    timeRange: '12:00 – 12:30',
-    subjectTitle: '午餐与休息',
-    subjectCategory: 'rest',
-    badge: '蓄能充能',
-    content: '正常休息',
-    startMinutes: 12 * 60,
-    endMinutes: 12 * 60 + 30,
+    timeRange: '11:30 – 12:15',
+    subjectTitle: '数学上午总结 + 英语阅读 (0.75h)',
+    subjectCategory: 'english',
+    badge: '15m收尾 + 25m阅读',
+    content: '花15分钟收尾上午数学；随后限时25分钟做1篇英语二阅读并对答案。',
+    startMinutes: 11 * 60 + 30,
+    endMinutes: 12 * 60 + 15,
   },
   {
     id: 'nonmock-slot-5',
-    timeRange: '12:30 – 13:30',
-    subjectTitle: '英语 1h',
-    subjectCategory: 'english',
-    badge: '手感保持',
-    content: '每日阅读或作文、新题型、翻译训练',
-    startMinutes: 12 * 60 + 30,
+    timeRange: '12:15 – 13:30',
+    subjectTitle: '午餐 + 强制午休 (1.25h)',
+    subjectCategory: 'rest',
+    titleTone: 'green',
+    badge: '强制午休蓄能',
+    content: '严格执行30分钟午休，为下午的408蓄能。',
+    startMinutes: 12 * 60 + 15,
     endMinutes: 13 * 60 + 30,
   },
   {
     id: 'nonmock-slot-6',
-    timeRange: '13:30 – 17:00',
-    subjectTitle: '408 3.5h',
-    subjectCategory: 'cs',
-    badge: '真题与重点突破',
-    content: '真题、知识点复习、重点章节突破',
+    timeRange: '13:30 – 14:30',
+    subjectTitle: '英语二核心块 (1h)',
+    subjectCategory: 'english',
+    badge: '精读·翻译·作文',
+    content: '精读上午的阅读错题 + 翻译训练或作文实战默写。',
     startMinutes: 13 * 60 + 30,
-    endMinutes: 17 * 60,
+    endMinutes: 14 * 60 + 30,
   },
   {
     id: 'nonmock-slot-7',
-    timeRange: '17:00 – 17:30',
-    subjectTitle: '政治刷题 30min',
-    subjectCategory: 'politics',
-    badge: '小程序与选择题',
-    content: '小程序 15～20 题，或复盘一组肖八/肖四选择题',
-    startMinutes: 17 * 60,
-    endMinutes: 17 * 60 + 30,
+    timeRange: '14:30 – 17:45',
+    subjectTitle: '408主力追赶块 (3.25h)',
+    subjectCategory: 'cs',
+    titleTone: 'cyan',
+    badge: '高分值硬骨头',
+    content: '啃硬骨头时间：专门攻克数据结构算法题、计组大题、OS的PV操作等高分值模块。',
+    startMinutes: 14 * 60 + 30,
+    endMinutes: 17 * 60 + 45,
   },
   {
     id: 'nonmock-slot-8',
-    timeRange: '17:30 – 18:30',
-    subjectTitle: '晚饭与休息',
-    subjectCategory: 'rest',
-    badge: '放松身心',
-    content: '放松',
-    startMinutes: 17 * 60 + 30,
+    timeRange: '17:45 – 18:30',
+    subjectTitle: '晚餐 + 政治刷题 (0.75h)',
+    subjectCategory: 'politics',
+    badge: '碎片刷选择题',
+    content: '同样利用晚餐前后的碎片时间，在手机上完成当日的政治选择题刷题量。',
+    startMinutes: 17 * 60 + 45,
     endMinutes: 18 * 60 + 30,
   },
   {
     id: 'nonmock-slot-9',
-    timeRange: '18:30 – 20:30',
-    subjectTitle: '408 2h',
-    subjectCategory: 'cs',
-    badge: '主力任务推进',
-    content: '继续 408 主力任务，完成当天计划',
+    timeRange: '18:30 – 20:00',
+    subjectTitle: '数学查漏补缺 (1.5h)',
+    subjectCategory: 'math',
+    titleTone: 'red',
+    isKeyChange: true,
+    badge: '关键改动·大幅提前',
+    content: '把原定20:30-22:00的数学大幅提前！此时精力尚可，用于重做近期模考卷的错题。',
     startMinutes: 18 * 60 + 30,
-    endMinutes: 20 * 60 + 30,
+    endMinutes: 20 * 60,
   },
   {
     id: 'nonmock-slot-10',
-    timeRange: '20:30 – 22:00',
-    subjectTitle: '数学 1.5h',
-    subjectCategory: 'math',
-    badge: '关键问题·错题回顾',
-    content: '优先处理当天未完成的关键问题；已完成则回顾错题',
-    startMinutes: 20 * 60 + 30,
-    endMinutes: 22 * 60,
+    timeRange: '20:00 – 21:15',
+    subjectTitle: '408真题二刷/次重点 (1.25h)',
+    subjectCategory: 'cs',
+    titleTone: 'cyan',
+    badge: '高频中档题巩固',
+    content: '处理408历年真题中的高频中档题，巩固下午所学。',
+    startMinutes: 20 * 60,
+    endMinutes: 21 * 60 + 15,
   },
   {
     id: 'nonmock-slot-11',
-    timeRange: '22:00 – 23:30',
-    subjectTitle: '政治 1.5h',
+    timeRange: '21:15 – 22:30',
+    subjectTitle: '政治大题 + 408背诵 (1.25h)',
     subjectCategory: 'politics',
-    badge: '按周动态推进',
-    content: '按当周政治规划完成背诵手册精读、肖八选择题（做题+订正+复盘）或肖四主观题背诵',
-    startMinutes: 22 * 60,
-    endMinutes: 23 * 60 + 30,
+    titleTone: 'green',
+    isKeyChange: true,
+    badge: '关键改动·大脑降频',
+    content: '大脑降频。集中背诵政治分析题、复盘傍晚刷错的政治选择题，以及默写408简答题概念。',
+    startMinutes: 21 * 60 + 15,
+    endMinutes: 22 * 60 + 30,
+  },
+  {
+    id: 'nonmock-slot-12',
+    timeRange: '22:30',
+    subjectTitle: '准时收书离场',
+    subjectCategory: 'rest',
+    titleTone: 'red',
+    badge: '停止脑力活动',
+    content: '停止一切脑力活动，回寝洗漱，准备入睡。',
+    startMinutes: 22 * 60 + 30,
+    endMinutes: 24 * 60,
   },
 ];
 
@@ -734,7 +805,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                     }`}
                   >
-                    <span>📖 非模考日</span>
+                    <span>📖 复盘日 (非模考)</span>
                   </button>
                 </div>
 
@@ -742,27 +813,23 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   className={`text-[11px] font-mono px-2 py-0.5 rounded-full border font-semibold flex items-center gap-1 ${
                     scheduleMode === 'mock'
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                      : 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                      : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                  {scheduleMode === 'mock' ? '模考日作息 · 提醒联动' : '非模考日作息 · 提醒联动'}
+                  {scheduleMode === 'mock' ? '模考日作息 · 提醒联动' : '复盘日作息 · 提醒联动'}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
                 {scheduleMode === 'mock'
-                  ? '模考日节奏：严防死守上午数学全真模考（8:30–11:30）与下午408主力（13:30–17:30 + 18:30–21:30），晚上复盘白纸重做'
-                  : '非模考日节奏：上午数学专项与错题重做（8:30–11:30），下午408攻坚与政治刷题，晚上数学晚练与政治背诵'}
+                  ? '模考日节奏：上午数二3h全真模考 + 45m即时复盘，强制午休，下午408严格3h全真模考；21:15后大脑降频，22:30准时收书离场。'
+                  : '复盘日的核心是弥补进度落后，把大块的高强度时间给数学和408的薄弱模块，同时同样遵守21:15后的降频原则与22:30离场。'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-emerald-400">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono tabular-nums text-emerald-400">
+              <span className="inline-block rounded-full h-2 w-2 bg-emerald-500" />
               <span>东八区当前: {chinaNow.timeStr}</span>
             </div>
 
@@ -804,11 +871,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       <span>时间段</span>
                     </span>
                   </th>
-                  <th className="py-3 px-3.5 whitespace-nowrap min-w-[150px]">
-                    <span>科目安排</span>
+                  <th className="py-3 px-3.5 whitespace-nowrap min-w-[190px]">
+                    <span>科目安排与执行动作</span>
                   </th>
                   <th className="py-3 px-4 min-w-[320px]">
-                    <span>具体执行内容与节奏</span>
+                    <span>改造逻辑与刚性要求</span>
                   </th>
                 </tr>
               </thead>
@@ -816,6 +883,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 {activeSlots.map((slot) => {
                   const isNow =
                     currentMinutes >= slot.startMinutes && currentMinutes < slot.endMinutes;
+                  const titleToneClass =
+                    slot.titleTone === 'red'
+                      ? 'text-rose-300'
+                      : slot.titleTone === 'orange'
+                      ? 'text-orange-300'
+                      : slot.titleTone === 'green'
+                      ? 'text-emerald-300'
+                      : slot.titleTone === 'cyan'
+                      ? 'text-cyan-300'
+                      : 'text-white';
                   return (
                     <tr
                       key={slot.id}
@@ -828,14 +905,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       <td className="py-3 px-3.5 align-top whitespace-nowrap">
                         <div className="flex flex-col gap-1">
                           <span
-                            className={`font-mono font-bold ${
+                            className={`font-mono tabular-nums font-bold ${
                               isNow ? 'text-amber-300' : 'text-slate-200'
                             }`}
                           >
                             {slot.timeRange}
                           </span>
                           {isNow && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-1.5 py-0.2 rounded w-fit animate-pulse">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-800/60 px-1.5 py-0.2 rounded w-fit">
                               <Zap className="h-2.5 w-2.5" /> 正在进行
                             </span>
                           )}
@@ -844,7 +921,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
                       <td className="py-3 px-3.5 align-top">
                         <div className="space-y-1">
-                          <div className="font-bold text-white text-xs sm:text-sm">
+                          <div className={`font-bold text-xs sm:text-sm ${titleToneClass}`}>
                             {slot.subjectTitle}
                           </div>
                           <span
@@ -858,7 +935,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       </td>
 
                       <td className="py-3 px-4 align-top leading-relaxed text-slate-300 text-xs">
-                        <p>{slot.content}</p>
+                        <p>
+                          {slot.isKeyChange && (
+                            <span className="text-amber-300 font-bold mr-1">关键改动：</span>
+                          )}
+                          {slot.content}
+                        </p>
                       </td>
                     </tr>
                   );
@@ -871,6 +953,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             {activeSlots.map((slot) => {
               const isNow =
                 currentMinutes >= slot.startMinutes && currentMinutes < slot.endMinutes;
+              const titleToneClass =
+                slot.titleTone === 'red'
+                  ? 'text-rose-300'
+                  : slot.titleTone === 'orange'
+                  ? 'text-orange-300'
+                  : slot.titleTone === 'green'
+                  ? 'text-emerald-300'
+                  : slot.titleTone === 'cyan'
+                  ? 'text-cyan-300'
+                  : 'text-white';
               return (
                 <div
                   key={slot.id}
@@ -881,11 +973,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-amber-400">
+                    <span className="font-mono tabular-nums text-xs font-bold text-amber-400">
                       {slot.timeRange}
                     </span>
                     {isNow ? (
-                      <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 animate-pulse">
+                      <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
                         <Zap className="h-3 w-3" /> 正在进行
                       </span>
                     ) : (
@@ -899,9 +991,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     )}
                   </div>
 
-                  <h3 className="text-sm font-bold text-white">{slot.subjectTitle}</h3>
+                  <h3 className={`text-sm font-bold ${titleToneClass}`}>{slot.subjectTitle}</h3>
 
                   <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80">
+                    {slot.isKeyChange && (
+                      <span className="text-amber-300 font-bold mr-1">关键改动：</span>
+                    )}
                     {slot.content}
                   </p>
                 </div>
@@ -913,8 +1008,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/60 gap-2">
           <span className="text-slate-400">
             {scheduleMode === 'mock'
-              ? '执行铁律：严格遵守上午 3h 闭卷模考 + 下午 7h (4h主力+3h追赶) 408 集中爆破，晚间白纸重做闭环！'
-              : '执行铁律：上午 3h 专项补漏与错题重做 + 下午 3.5h 408 与政治刷题 + 晚间 408主力与数学/政治闭环！'}
+              ? '模考日刚性铁律：上午数二3h + 45m趁热清选填，12:55强制午休，下午408严格3h全真模考，21:15后彻底降频，22:30准时收书离场！'
+              : '复盘日刚性铁律：上午数二3h专项攻坚，下午408主力追赶3.25h，18:30提前查漏数学，21:15大脑降频背政治+408概念，22:30准时离场！'}
           </span>
           <button
             onClick={() => onNavigateToTab('workstation')}
