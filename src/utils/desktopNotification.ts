@@ -216,6 +216,19 @@ export const NON_MOCK_DAY_TIME_NODES: ScheduleNode[] = [
   },
 ];
 
+export interface ScheduleAlertEvent {
+  node: ScheduleNode;
+  isSnoozed?: boolean;
+  snoozeCount?: number;
+  triggeredAt: number;
+}
+
+export interface SnoozeStateInfo {
+  node: ScheduleNode;
+  fireAt: number;
+  snoozeCount: number;
+}
+
 // Default backward compatibility
 export const TIME_NODES: ScheduleNode[] = MOCK_DAY_TIME_NODES;
 
@@ -227,7 +240,15 @@ class DesktopNotificationManager {
   private scheduleMode: 'mock' | 'non_mock' = 'mock';
   private notifiedToday: Set<string> = new Set();
   private lastDateStr: string = '';
-  private onInAppToastCallback: ((node: ScheduleNode) => void) | null = null;
+  private onInAppToastCallback: ((event: ScheduleAlertEvent) => void) | null = null;
+  private onSnoozeStateCallback: ((info: SnoozeStateInfo | null) => void) | null = null;
+
+  // Persistent native notification & tab title flashing state
+  private activeNativeNotif: Notification | null = null;
+  private titleFlashInterval: ReturnType<typeof setInterval> | null = null;
+  private originalDocumentTitle: string = '考研日程规划';
+  private snoozeTimerId: ReturnType<typeof setTimeout> | null = null;
+  private snoozedTarget: SnoozeStateInfo | null = null;
 
   constructor() {
     try {
@@ -238,6 +259,9 @@ class DesktopNotificationManager {
       const savedMode = localStorage.getItem(SCHEDULE_MODE_STORAGE_KEY);
       if (savedMode === 'mock' || savedMode === 'non_mock') {
         this.scheduleMode = savedMode;
+      }
+      if (typeof document !== 'undefined' && document.title) {
+        this.originalDocumentTitle = document.title;
       }
     } catch {
       // ignore
@@ -263,8 +287,13 @@ class DesktopNotificationManager {
     return this.scheduleMode === 'mock' ? MOCK_DAY_TIME_NODES : NON_MOCK_DAY_TIME_NODES;
   }
 
-  public setInAppToastCallback(cb: (node: ScheduleNode) => void) {
+  public setInAppToastCallback(cb: (event: ScheduleAlertEvent) => void) {
     this.onInAppToastCallback = cb;
+  }
+
+  public setSnoozeStateCallback(cb: (info: SnoozeStateInfo | null) => void) {
+    this.onSnoozeStateCallback = cb;
+    cb(this.snoozedTarget);
   }
 
   public isEnabled(): boolean {
@@ -277,6 +306,10 @@ class DesktopNotificationManager {
       localStorage.setItem(NOTIF_STORAGE_KEY, String(val));
     } catch {
       // ignore
+    }
+    if (!val) {
+      this.dismissActiveNotification();
+      this.cancelSnooze();
     }
   }
 
@@ -303,44 +336,204 @@ class DesktopNotificationManager {
   }
 
   /**
-   * Dispatches a Windows notification (Native Toast in Windows bottom-right corner)
-   * plus plays a gentle chime and triggers the in-app bottom-right toast.
+   * Starts flashing document.title so the user notices immediately even on another tab
    */
-  public triggerNotification(node: ScheduleNode) {
-    if (!this.enabled) return;
+  public startTitleFlash(node: ScheduleNode, isSnoozed: boolean = false) {
+    if (typeof document === 'undefined') return;
+
+    if (!this.titleFlashInterval) {
+      // Capture clean title before flashing begins
+      if (document.title && !document.title.startsWith('🔔') && !document.title.startsWith('⏰')) {
+        this.originalDocumentTitle = document.title;
+      }
+    } else {
+      clearInterval(this.titleFlashInterval);
+      this.titleFlashInterval = null;
+    }
+
+    const prefix = isSnoozed ? '⏰【延后到点】' : `🔔【${node.timeStr}】`;
+    const flashA = `${prefix}${node.subjectName} - 请立即切换！`;
+    const flashB = `⚠️ 节点已到 · 等待确认 | ${this.originalDocumentTitle}`;
+
+    let toggle = true;
+    document.title = flashA;
+
+    this.titleFlashInterval = setInterval(() => {
+      document.title = toggle ? flashB : flashA;
+      toggle = !toggle;
+    }, 800);
+  }
+
+  /**
+   * Stops flashing document.title and restores the original title
+   */
+  public stopTitleFlash() {
+    if (this.titleFlashInterval) {
+      clearInterval(this.titleFlashInterval);
+      this.titleFlashInterval = null;
+    }
+    if (typeof document !== 'undefined') {
+      document.title = this.originalDocumentTitle || '考研日程规划';
+    }
+  }
+
+  /**
+   * Closes persistent native notification and stops tab title flashing
+   */
+  public dismissActiveNotification() {
+    this.stopTitleFlash();
+    if (this.activeNativeNotif) {
+      try {
+        this.activeNativeNotif.close();
+      } catch {
+        // ignore
+      }
+      this.activeNativeNotif = null;
+    }
+  }
+
+  /**
+   * Cancels any pending 5-minute snooze timer
+   */
+  public cancelSnooze() {
+    if (this.snoozeTimerId) {
+      clearTimeout(this.snoozeTimerId);
+      this.snoozeTimerId = null;
+    }
+    this.snoozedTarget = null;
+    if (this.onSnoozeStateCallback) {
+      this.onSnoozeStateCallback(null);
+    }
+  }
+
+  /**
+   * Snoozes the current alert for N minutes (default 5 minutes), then re-triggers the strong alert
+   */
+  public snoozeNotification(node: ScheduleNode, minutes: number = 5, currentSnoozeCount: number = 0) {
+    this.dismissActiveNotification();
+    if (this.snoozeTimerId) {
+      clearTimeout(this.snoozeTimerId);
+      this.snoozeTimerId = null;
+    }
+
+    const delayMs = minutes * 60 * 1000;
+    const nextSnoozeCount = currentSnoozeCount + 1;
+    const fireAt = Date.now() + delayMs;
+
+    this.snoozedTarget = {
+      node,
+      fireAt,
+      snoozeCount: nextSnoozeCount,
+    };
+
+    if (this.onSnoozeStateCallback) {
+      this.onSnoozeStateCallback(this.snoozedTarget);
+    }
+
+    this.snoozeTimerId = setTimeout(() => {
+      this.fireSnoozedTarget();
+    }, delayMs);
+  }
+
+  /**
+   * Fires a pending snoozed notification immediately (called by timer, fallback poll, or user button)
+   */
+  public fireSnoozedTarget() {
+    if (!this.snoozedTarget) return;
+    const target = this.snoozedTarget;
+    this.cancelSnooze();
+    this.triggerNotification(target.node, {
+      isSnoozed: true,
+      snoozeCount: target.snoozeCount,
+      force: true,
+    });
+  }
+
+  /**
+   * Dispatches:
+   * 1. Web Audio chime
+   * 2. Browser tab title flashing
+   * 3. Persistent Windows/OS system notification (requireInteraction: true)
+   * 4. In-app centered strong-intercept modal (manual confirmation required)
+   */
+  public triggerNotification(
+    node: ScheduleNode,
+    options?: { isSnoozed?: boolean; snoozeCount?: number; force?: boolean }
+  ) {
+    if (!this.enabled && !options?.force) return;
+
+    // Close any previous native notification cleanly
+    if (this.activeNativeNotif) {
+      try {
+        this.activeNativeNotif.close();
+      } catch {
+        // ignore
+      }
+      this.activeNativeNotif = null;
+    }
 
     // 1. Play alert chime sound
     soundManager.playChime();
 
-    // 2. Trigger native Windows notification (HTML5 Notification API)
+    // 2. Start browser tab title flashing
+    this.startTitleFlash(node, Boolean(options?.isSnoozed));
+
+    // 3. Trigger persistent native Windows notification (HTML5 Notification API with requireInteraction)
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
       try {
-        const notif = new Notification(node.title, {
-          body: `${node.actionSummary}\n【考研日程规划】`,
+        const notifTitle = options?.isSnoozed
+          ? `⏰【延后提醒】${node.title}`
+          : node.title;
+
+        const notifOptions: NotificationOptions & { renotify?: boolean } = {
+          body: `${options?.isSnoozed ? '已延后 5 分钟，请立即切换执行！\n' : ''}${node.actionSummary}\n【考研日程规划 · 常驻提醒，需手动关闭】`,
           tag: `kaoyan-node-${node.timeStr}`,
-          icon: '/favicon.ico',
-          silent: true, // we already played Web Audio chime
-        });
+          requireInteraction: true,
+          renotify: true,
+        };
+
+        const notif = new Notification(notifTitle, notifOptions);
+        this.activeNativeNotif = notif;
 
         notif.onclick = () => {
           window.focus();
           notif.close();
+          if (this.activeNativeNotif === notif) {
+            this.activeNativeNotif = null;
+          }
+        };
+
+        notif.onclose = () => {
+          if (this.activeNativeNotif === notif) {
+            this.activeNativeNotif = null;
+          }
         };
       } catch (err) {
         console.warn('Native desktop notification dispatch error (e.g. iframe sandbox):', err);
       }
     }
 
-    // 3. Trigger in-app bottom-right floating Toast (ensures 100% visible even in iframes)
+    // 4. Trigger in-app centered strong-intercept modal
     if (this.onInAppToastCallback) {
-      this.onInAppToastCallback(node);
+      this.onInAppToastCallback({
+        node,
+        isSnoozed: Boolean(options?.isSnoozed),
+        snoozeCount: options?.snoozeCount || 0,
+        triggeredAt: Date.now(),
+      });
     }
   }
 
   /**
-   * Routine check against current East-8 (Beijing Time) minutes
+   * Routine check against current East-8 (Beijing Time) minutes + snooze fallback check
    */
   public checkAndTriggerSchedule() {
+    // Fallback check for snoozed timer in case background tab throttled setTimeout
+    if (this.snoozedTarget && Date.now() >= this.snoozedTarget.fireAt) {
+      this.fireSnoozedTarget();
+      return;
+    }
+
     if (!this.enabled) return;
 
     const chinaTime = getChinaDateInfo();
@@ -369,18 +562,20 @@ class DesktopNotificationManager {
   }
 
   /**
-   * For user test: sends a sample Windows bottom-right notification immediately
+   * For user test: immediately triggers the centered strong-intercept modal,
+   * tab title flashing, and persistent Windows system notification.
    */
   public sendTestNotification() {
     const testNode: ScheduleNode = {
       timeStr: '测试',
       hour: 0,
       minute: 0,
-      title: '🔔【测试】Windows 桌面到达弹窗测试成功！',
-      subjectName: '桌面通知测试',
-      actionSummary: '当时间节点到达时（如 08:30 数二模考、14:00 408模考、21:15 降频记忆块、22:30 收书离场），右下角将自动弹出此通知提示！',
+      title: '【强提醒测试】时间节点已到 · 需手动确认',
+      subjectName: '强拦截与常驻通知',
+      actionSummary:
+        '到点时将弹出此居中提醒卡片（不会自动消失），同步开启浏览器标签页标题闪烁与 Windows 常驻桌面通知。请点击下方「立即切换 / 进入番茄钟」或「再延后 5 分钟」进行确认。',
     };
-    this.triggerNotification(testNode);
+    this.triggerNotification(testNode, { force: true });
   }
 }
 

@@ -119,6 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleTestNotification = () => {
+    setIsSettingsOpen(false);
     desktopNotificationManager.sendTestNotification();
     setTestSentToast(true);
     setTimeout(() => setTestSentToast(false), 3000);
@@ -387,7 +388,7 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div>
                         <div className="font-bold text-xs text-white flex items-center gap-1.5 flex-wrap">
-                          <span>Windows 桌面到达通知</span>
+                          <span>强拦截提醒 & 常驻系统通知</span>
                           {notifPermission === 'granted' && notifEnabled ? (
                             <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.2 rounded font-semibold">
                               ✓ 已生效
@@ -403,7 +404,7 @@ export const Header: React.FC<HeaderProps> = ({
                           )}
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                          按模考/非模考日时刻表（首页一键切换），到达各科节点时右下角自动弹窗
+                          到点弹出居中强拦截卡片（需手动确认），同步标签页标题闪烁与 Windows 常驻桌面通知
                         </p>
                       </div>
                     </div>
@@ -418,7 +419,7 @@ export const Header: React.FC<HeaderProps> = ({
                         notifEnabled && notifPermission === 'granted' ? 'bg-emerald-500' : 'bg-slate-800'
                       }`}
                       title={
-                        notifEnabled ? '点击关闭桌面通知' : '点击开启 Windows 桌面到达通知'
+                        notifEnabled ? '点击关闭桌面通知' : '点击开启强提醒与常驻桌面通知'
                       }
                     >
                       <span
@@ -434,7 +435,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="text-[10px] text-slate-500">
                       {notifPermission === 'denied'
                         ? '请在地址栏左侧网站设置中开启通知权限'
-                        : '测试桌面右下角 Toast 弹窗与提示音'}
+                        : '测试居中强拦截弹窗、标签页闪烁与常驻通知'}
                     </span>
 
                     <button
@@ -445,12 +446,12 @@ export const Header: React.FC<HeaderProps> = ({
                       {testSentToast ? (
                         <>
                           <Check className="h-3.5 w-3.5 text-emerald-400" />
-                          <span className="text-emerald-300">已发送测试！</span>
+                          <span className="text-emerald-300">已触发测试！</span>
                         </>
                       ) : (
                         <>
                           <Zap className="h-3.5 w-3.5 text-amber-400" />
-                          <span>测试弹窗</span>
+                          <span>测试强提醒</span>
                         </>
                       )}
                     </button>
