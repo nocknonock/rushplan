@@ -1038,6 +1038,12 @@ export default function App() {
       politicsWeeks: politicsWeeks,
       englishWeeks: englishWeeks,
       pomodoroSessions: pomodoroSessions,
+      customMockSchedule: desktopNotificationManager.isScheduleCustomized('mock')
+        ? desktopNotificationManager.getScheduleSlots('mock')
+        : undefined,
+      customNonMockSchedule: desktopNotificationManager.isScheduleCustomized('non_mock')
+        ? desktopNotificationManager.getScheduleSlots('non_mock')
+        : undefined,
     };
     const dataStr =
       'data:text/json;charset=utf-8,' +
@@ -1052,7 +1058,7 @@ export default function App() {
     downloadAnchor.click();
     downloadAnchor.remove();
     showToast(
-      `作战数据已全量导出（含数二/408日计划、政英7周规划、番茄钟计时档案与笔记）`
+      `作战数据已全量导出（含数二/408日计划、政英7周规划、自定义时刻表、番茄钟计时档案与笔记）`
     );
   };
 
@@ -1085,6 +1091,15 @@ export default function App() {
           }
           if (Array.isArray(parsed.pomodoroSessions)) {
             setPomodoroSessions(parsed.pomodoroSessions);
+          }
+          if (Array.isArray(parsed.customMockSchedule) && parsed.customMockSchedule.length > 0) {
+            desktopNotificationManager.saveScheduleSlots('mock', parsed.customMockSchedule);
+          }
+          if (
+            Array.isArray(parsed.customNonMockSchedule) &&
+            parsed.customNonMockSchedule.length > 0
+          ) {
+            desktopNotificationManager.saveScheduleSlots('non_mock', parsed.customNonMockSchedule);
           }
         }
 

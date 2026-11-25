@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MOCK_SCHEDULE_SLOTS, NON_MOCK_SCHEDULE_SLOTS } from './DashboardOverview';
 import { PomodoroSessionRecord, PomodoroSubjectKey } from '../types/kaoyan';
 import { soundManager } from '../utils/sound';
 import { getChinaDateInfo } from '../utils/chinaDate';
-import { desktopNotificationManager } from '../utils/desktopNotification';
+import { desktopNotificationManager, ScheduleSlot } from '../utils/desktopNotification';
+import { ScheduleEditModal } from './ScheduleEditModal';
 import {
   Clock,
   Play,
@@ -258,6 +258,19 @@ export const DailyWorkstation: React.FC<DailyWorkstationProps> = ({
   const [scheduleMode, setScheduleMode] = useState<'mock' | 'non_mock'>(() =>
     desktopNotificationManager.getScheduleMode()
   );
+  const [activeScheduleSlots, setActiveScheduleSlots] = useState<ScheduleSlot[]>(() =>
+    desktopNotificationManager.getScheduleSlots()
+  );
+  const [isScheduleEditOpen, setIsScheduleEditOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const syncSchedule = () => {
+      const mode = desktopNotificationManager.getScheduleMode();
+      setScheduleMode(mode);
+      setActiveScheduleSlots(desktopNotificationManager.getScheduleSlots(mode));
+    };
+    return desktopNotificationManager.subscribeScheduleChange(syncSchedule);
+  }, []);
 
   const handleWorkstationScheduleMode = (mode: 'mock' | 'non_mock') => {
     setScheduleMode(mode);
@@ -1654,13 +1667,23 @@ export const DailyWorkstation: React.FC<DailyWorkstationProps> = ({
               </button>
             </div>
           </div>
-          <span className="text-xs text-slate-400">
-            07:15 唤醒 · 21:15 后强制降频 · 22:30 准时收书离场
-          </span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsScheduleEditOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Edit3 className="h-3.5 w-3.5 text-amber-400" />
+              <span>自定义时刻表</span>
+            </button>
+            <span className="text-xs text-slate-400">
+              07:15 唤醒 · 21:15 后强制降频 · 22:30 准时收书离场
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-          {(scheduleMode === 'mock' ? MOCK_SCHEDULE_SLOTS : NON_MOCK_SCHEDULE_SLOTS).map((slot) => {
+          {activeScheduleSlots.map((slot) => {
             const isMath = slot.subjectCategory === 'math';
             const isCs = slot.subjectCategory === 'cs';
             const isEnglish = slot.subjectCategory === 'english';
@@ -1719,6 +1742,12 @@ export const DailyWorkstation: React.FC<DailyWorkstationProps> = ({
             );
           })}
         </div>
+
+        <ScheduleEditModal
+          isOpen={isScheduleEditOpen}
+          initialMode={scheduleMode}
+          onClose={() => setIsScheduleEditOpen(false)}
+        />
       </div>
 
       {/* ========================================================================= */}
