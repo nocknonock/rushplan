@@ -1,14 +1,57 @@
 {
-  "name": "react-example",
+  "name": "kaoyan-schedule-planner",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "专为考研数二 + 408 + 英语 + 政治考生打造的每日落地执行系统",
+  "author": "Kaoyan Schedule Planner",
   "type": "module",
+  "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
+    "build:win": "vite build && electron-builder --win --x64",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist release server.js",
     "lint": "tsc --noEmit"
+  },
+  "build": {
+    "appId": "com.kaoyan.schedule.planner",
+    "productName": "考研日程规划",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Kaoyan-Schedule-${version}-${target}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "考研日程规划"
+    },
+    "portable": {
+      "artifactName": "Kaoyan-Schedule-${version}-Portable.${ext}"
+    }
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

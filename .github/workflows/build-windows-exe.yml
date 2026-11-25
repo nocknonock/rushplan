@@ -1,0 +1,69 @@
+name: Build Windows Desktop EXE & Release
+
+on:
+  push:
+    branches: ['main', 'master']
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 'windows-exe-release'
+  cancel-in-progress: true
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install Electron & Electron Builder for packaging
+        run: npm install --no-save --legacy-peer-deps electron@^33.2.0 electron-builder@^25.1.8
+
+      - name: Build web assets (Vite)
+        run: npm run build
+
+      - name: Package Windows Portable & Setup EXE
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win --x64 --publish never
+
+      - name: Upload Windows EXE to Workflow Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kaoyan-Schedule-Windows-EXE
+          path: |
+            release/*.exe
+          if-no-files-found: error
+
+      - name: Publish to GitHub Releases (Releases Page)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_Type == 'tag' && github.ref_name || 'latest-windows-exe' }}
+          name: '考研日程规划 Windows 桌面客户端 (.exe)'
+          body: |
+            ### 🖥️ 考研日程规划 Windows 桌面版 (.exe)
+            
+            本版本由 GitHub Actions 自动编译打包，与网页版功能与本地存储 100% 同步，并针对桌面端进行了后台防休眠强化：
+            
+            - **免安装便携版 (`*-Portable.exe`)**：下载后直接双击即可运行，无需安装。
+            - **标准安装版 (`*-Setup.exe`)**：支持自定义安装目录、自动创建桌面快捷方式与开始菜单图标。
+            - **后台准点强提醒**：禁用浏览器后台计时节流（`backgroundThrottling: false`），最小化做题时番茄钟与整点强拦截弹窗依然分秒不差，并支持 Windows 任务栏图标高亮闪烁提醒。
+            - **数据无缝迁移**：可在网页版右上角点击「导出备份」生成 `.json` 文件，在桌面客户端点击「导入恢复」即可一键同步所有日程、自定义时刻表与番茄钟记录。
+          files: |
+            release/*.exe
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

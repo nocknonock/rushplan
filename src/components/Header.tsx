@@ -16,6 +16,7 @@ import {
   Check,
   X,
   Sliders,
+  Monitor,
 } from 'lucide-react';
 import { MOTIVATIONAL_QUOTES } from '../data/motivationalQuotes';
 import { desktopNotificationManager } from '../utils/desktopNotification';
@@ -458,9 +459,44 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
+                {/* Setting Item 3: Windows Desktop EXE Client Info */}
+                <div className="rounded-xl bg-slate-950/80 p-3.5 border border-slate-800/80 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-lg bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+                        <Monitor className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-xs text-white flex items-center gap-1.5 flex-wrap">
+                          <span>Windows 桌面客户端 (.exe)</span>
+                          {typeof window !== 'undefined' &&
+                          Boolean(
+                            (window as unknown as { kaoyanDesktop?: { isDesktopApp?: boolean } })
+                              .kaoyanDesktop?.isDesktopApp
+                          ) ? (
+                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.2 rounded font-semibold">
+                              ✓ 当前正运行于桌面版
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-800/60 px-1.5 py-0.2 rounded font-semibold">
+                              GitHub Releases 自动构建
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                          支持免安装便携版 (Portable.exe) 与安装包 (Setup.exe)，后台防休眠、到点任务栏闪烁提醒
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400 leading-relaxed">
+                    获取方式：代码推送到 GitHub 后，前往仓库右侧 <strong className="text-cyan-300">Releases（版本页）</strong> 或顶部 <strong className="text-cyan-300">Actions</strong> 即可直接下载最新 <code className="text-amber-300 font-mono">.exe</code>。
+                  </div>
+                </div>
+
                 {/* Footer Note */}
                 <div className="text-[10px] text-slate-500 text-center leading-relaxed">
-                  基于东八区考研作息对齐，网页置于后台运行依然准时提醒。
+                  基于东八区考研作息对齐，网页与 Windows 桌面客户端后台运行依然准时提醒。
                 </div>
               </div>
             )}
